@@ -23,4 +23,4 @@ are mapped to HTML buttons.
 
 Renato Aloi, August 2013
 renato.aloi@gmail.com
-seriallink.com.br
+http://seriallink.com.br
