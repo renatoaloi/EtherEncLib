@@ -11,7 +11,7 @@ Unlike older implementations, EtherEncLib library utilizes a diferent approach,
 sending more than one packet per request. This changes everything!
 
 The problem I'v got using older implementations is that my HTML is a larger sum of text!
-It got Javascript, CSS, tons of tags and commands. It didn't fit in in that tiny 512 byte 
+It got Javascript, CSS, tons of tags and commands. It didn't fit in that tiny 512 bytes 
 buffer the library had. And this buffer is sent once per request.
 
 EtherEncLib sends a small buffer plenty of times per request. Keep in mind we need to deliver
