@@ -1,5 +1,4 @@
 #include "checksum.h"
-#include "net.h"
 
 // The Ip checksum is calculated over the ip header only starting
 // with the header length field and a total length of 20 bytes
@@ -24,7 +23,6 @@
 // http://www.msc.uky.edu/ken/cs471/notes/chap3.htm
 // The RFC has also a C code example: http://www.faqs.org/rfcs/rfc1071.html
 
-#include "net.h"
 
 uint16_t checksum(uint8_t *buf, uint16_t len, uint8_t type)
 {
