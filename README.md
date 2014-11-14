@@ -3,6 +3,9 @@ EtherEncLib
 
 Ethernet ENC28J60 Library for Arduino
 
+REV 3 - New version! Now using Enc28CoreLib! For now, see new version at enc28coremerge branch!
+https://github.com/renatoaloi/EtherEncLib/tree/enc28coremerge
+
 EtherEncLib is a new implementation for ENC28J60 Stand-Alone Ethernet Controller with SPI Interface. 
 Original implementation for this code was made by Guido Socher based on enc28j60.c file from the 
 AVRLib library by Pascal Stang; and finally modified by Renato Aloi.
