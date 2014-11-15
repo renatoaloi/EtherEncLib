@@ -134,13 +134,20 @@ void EtherEncLib::close()
 // like: ?param1=512&param2=xyz
 char *EtherEncLib::getParams()
 {
-	if (DEBUGLIB) Serial.println(F("Lendo dados : "));
 	char c = m_stack.read();
 	char *p1 = "GET";
 	char *p2 = "POST";
 	char *p3 = "favicon.ico";
 	char method = -1;
 	char tmpData[BUFFER_PARAMS_LEN];
+	char countEnter = 0;
+	uint j = 0;
+	bool isGET = true;
+	bool isPOST = true;
+	bool isFAV = true;
+	char *resposta;
+
+	//if (DEBUGLIB) Serial.println(F("Lendo dados : "));
 
 	for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  tmpData[i] = 0;
 	
@@ -152,7 +159,7 @@ char *EtherEncLib::getParams()
 			if (c == p1[0])
 			{
 				// is GET?
-				bool isGET = true;
+				isGET = true;
 				c = m_stack.read();
 				for (unsigned i = 1; i < 3; i++) 
 				{ 
@@ -173,7 +180,7 @@ char *EtherEncLib::getParams()
 			else if (c == p2[0])
 			{
 				// is POST?
-				bool isPOST = true;
+				isPOST = true;
 				c = m_stack.read();
 				for (unsigned i = 1; i < 4; i++) 
 				{ 
@@ -194,12 +201,12 @@ char *EtherEncLib::getParams()
 		}
 		else
 		{
-			//if (c == ' ')
-			//{
+			if (method == 0) // Getting GET parameters
+			{
 				//c = m_stack.read();
 				//if (c == '/')
 				//{
-					uint j = 0;
+					j = 0;
 
 					//c = m_stack.read();
 			
@@ -207,7 +214,7 @@ char *EtherEncLib::getParams()
 					if (c == p3[0])
 					{
 						// is favicon.ico?
-						bool isFAV = true;
+						isFAV = true;
 						c = m_stack.read();
 						for (unsigned i = 1; i < 11; i++) 
 						{ 
@@ -233,7 +240,7 @@ char *EtherEncLib::getParams()
 					if (c == '?')
 					{
 						if (DEBUGLIB) Serial.println(F("GET OK!"));
-						while(c != ' ')
+						while(c != ' ' && c != -1)
 						{
 							if (j < BUFFER_PARAMS_LEN - 1)
 							{
@@ -245,15 +252,59 @@ char *EtherEncLib::getParams()
 							}
 							j++;
 							c = m_stack.read(); 
+							if (c == ' ' || c == -1) tmpData[j] = '\0';
 						}
 
 						if (DEBUGLIB) Serial.print(F("Achei Parametros:"));
-						if (DEBUGLIB) Serial.println(m_httpData);
+						if (DEBUGLIB) Serial.println(tmpData);
 
 						break;
 					}
 				//}
-			//}
+			}
+			else if (method == 1) // Getting POST parameters
+			{
+				j = 0;
+
+				if (c == '\r' || c == '\n') {
+					countEnter++;
+					// skip next byte if \r
+					if (c == '\r') c = m_stack.read(); 
+				}
+				else countEnter=0;
+
+				// Waiting for double enter \r\n\r\n
+				if (countEnter > 1)
+				{
+					c = m_stack.read();
+					// start gathering post data!
+					if (DEBUGLIB) Serial.println(F("POST OK!"));
+					while(c != '\r' && c != '\n' && c != -1)
+					{
+						if (j < BUFFER_PARAMS_LEN - 1)
+						{
+							tmpData[j] = c;
+						}
+						else if (j < BUFFER_PARAMS_LEN)
+						{
+							tmpData[j] = '\0';
+						}
+						j++;
+						c = m_stack.read(); 
+						if (c == '\r' || c == '\n' || c == -1) tmpData[j] = '\0';
+					}
+
+					if (DEBUGLIB) Serial.print(F("Achei Parametros POST:"));
+					for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++) {
+						if (DEBUGLIB) Serial.print(tmpData[i], DEC);
+						if (DEBUGLIB && i < BUFFER_PARAMS_LEN - 1) Serial.print(", ");
+					}
+					if (DEBUGLIB) Serial.println();
+
+					// then break the while, anyway
+					break;
+				}
+			}
 		}
 		c = m_stack.read();
 	}
@@ -262,19 +313,19 @@ char *EtherEncLib::getParams()
 
 	// Retornando HTTP 200 OK!
 	uchar lenData = 17;
-	char *resposta = "HTTP/1.0 200 OK\n\r";
+	resposta = "HTTP/1.0 200 OK\r\n";
 	m_stack.write(resposta, lenData);
 	m_stack.send();
 
 	//while(1);
 
 	lenData = 25;
-    resposta = "Content-Type: text/html\n\r";
+    resposta = "Content-Type: text/html\r\n";
 	m_stack.write(resposta, lenData);
 	m_stack.send();
 
 	lenData = 20;
-    resposta = "Pragma: no-cache\n\r\n\r";
+    resposta = "Pragma: no-cache\r\n\r\n";
 	m_stack.write(resposta, lenData);
 	m_stack.send();
 

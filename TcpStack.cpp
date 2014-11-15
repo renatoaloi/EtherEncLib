@@ -223,11 +223,11 @@ void TcpStack::handleStack(void)
 
 						if (finFlag)
 						{
-							if (isSession() && m_sessionPort == tmpPort)
-							{
+							//if (isSession() && m_sessionPort == tmpPort)
+							//{
 								// session exists and is closing!
-								if (m_closing)
-								{
+								//if (m_closing)
+								//{
 									if (DEBUG) Serial.println("closing!");
 									
 									// Let client know that we know
@@ -247,8 +247,8 @@ void TcpStack::handleStack(void)
 									m_established = false;
 									m_responding = false;
 									m_closing = false;
-								}
-							}
+								//}
+							//}
 						}
 					}
 				}
@@ -941,7 +941,7 @@ char TcpStack::read(void)
 	//if (DEBUG)  { Serial.print((char)localBuf[0]); Serial.print(", "); }
 	//if (DEBUG)  { Serial.print((char)localBuf[0]); }
 
-	if (--m_recvPayload == 0)
+	if (m_recvPayload-- == 0)
 		return -1;
 	
 	return (char)localBuf[0];
