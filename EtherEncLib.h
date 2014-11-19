@@ -31,12 +31,13 @@ class EtherEncLib
 		for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = 0;
 	};
    
-    void          begin     (unsigned char *ip, unsigned char *mac);
-    unsigned char available ();
-    void          print     (char *rd);
-    void          print     (unsigned int val);
-    void          close     ();
-    char          *getParams ();
+    void          begin      (unsigned char *ip, unsigned char *mac);
+    unsigned char available  (void);
+    void          print      (char *rd);
+    void          print      (unsigned int val);
+    void          close      (void);
+    char	  read       (void);
+    char          *getParams (void);
 };
 
 #endif

@@ -3,13 +3,13 @@
   EtherEncLib.cpp - Library for Ethernet ENC29J60 Module.
   Created by Renato Aloi, August 27, 2013.
   Released into the public domain.
-  
+
   Description ::
   HTTP 1.0/1.1 GET Listener for web browsing integration.
-  
+
   What DO you get ::
   - ARP and ICMP treatment
-  - HTTP GET action over TCP-IP 
+  - HTTP GET action over TCP-IP
   - Very responsive engine, and very fast!
   - HTTPd engine with "One Way" implementation
     - One way flow = SYS..ACK..PUSH..FIN
@@ -24,21 +24,21 @@
       http://192.168.1.25/?param1=0.231&param2=0.34
       will result: ?param1=0.231&param2=0.34
   - Timered loops to avoid get stucked waiting a client response
-  
-  
+
+
   What do you NOT get ::
   - This is a very limited implementation of TCP-IP protocol
     - Do not expect implementations like FTP, SMTP, etc
     - Only one aspect of TCP/HTTP service was implemented
   - On HTTP protocol, only GET form method was implemented
     - POST method is NOT implemented
-    - POST method is ready to go, having already commented spots to code 
+    - POST method is ready to go, having already commented spots to code
   - Faulty handle for diferent Source ports
     - The system will only handle one source port incomming connection
     - Other request arriving from other ports will be handled only at end of current request
     - Only FIN+ACK arriving from other ports will be handled
   - UDP NOT implemented
-  
+
 */
 
 #include <Arduino.h>
@@ -57,7 +57,7 @@
 // Begin method
 // Configures the lib and load initial params
 void EtherEncLib::begin(unsigned char *ip, unsigned char *mac)
-{	
+{
 	m_stack.setMacAddr(&mac[0]);
 	m_stack.setIpAddr(&ip[0]);
 	m_stack.open(m_port);
@@ -65,7 +65,7 @@ void EtherEncLib::begin(unsigned char *ip, unsigned char *mac)
 
 // Available method
 // Returns true when initial handshake is done
-unsigned char EtherEncLib::available()
+unsigned char EtherEncLib::available(void)
 {
 	if (m_stack.established() && !m_stack.closing())
 	{
@@ -80,7 +80,7 @@ void EtherEncLib::print(char *rd)
 {
     // String length calc.
     unsigned int l = getPrintStringLen(rd);
-    
+
     // Checking if total len is greather
     // than max chunk length
     if (l > MAX_CHUNK_LEN)
@@ -90,16 +90,16 @@ void EtherEncLib::print(char *rd)
         // "left overs" chunk
         unsigned char divInt  = l / MAX_CHUNK_LEN;
         unsigned char divRest = l % MAX_CHUNK_LEN;
-        
+
         //if (DEBUGLIB) { Serial.print("Rodando: "); Serial.print(divInt, DEC); Serial.print(" - "); Serial.print(divRest, DEC); Serial.print(" :: de: "); Serial.println(l, DEC); }
-        
+
         // Slicing role message in chunks
         for (int i = 0; i < divInt; i++)
         {
             m_stack.write(&rd[i * MAX_CHUNK_LEN], MAX_CHUNK_LEN);
 			m_stack.send();
         }
-        
+
         // One last chunk to send "left overs"
 		m_stack.write(&rd[divInt * MAX_CHUNK_LEN], divRest);
 		m_stack.send();
@@ -124,15 +124,20 @@ void EtherEncLib::print(unsigned int val)
 
 // Close method
 // Self-explaining
-void EtherEncLib::close()
+void EtherEncLib::close(void)
 {
     m_stack.close();
+}
+
+char EtherEncLib::read(void)
+{
+	return m_stack.read();
 }
 
 // GetParams
 // Returns char array containing string of URL parameters, including character "?"
 // like: ?param1=512&param2=xyz
-char *EtherEncLib::getParams()
+char *EtherEncLib::getParams(void)
 {
 	char c = m_stack.read();
 	char *p1 = "GET";
@@ -150,7 +155,7 @@ char *EtherEncLib::getParams()
 	//if (DEBUGLIB) Serial.println(F("Lendo dados : "));
 
 	for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  tmpData[i] = 0;
-	
+
 	while(c != -1)
 	{
 		//if (DEBUGLIB) Serial.print(c);
@@ -161,18 +166,18 @@ char *EtherEncLib::getParams()
 				// is GET?
 				isGET = true;
 				c = m_stack.read();
-				for (unsigned i = 1; i < 3; i++) 
-				{ 
-					if (c!=p1[i]) 
-					{ 
-						isGET = false; 
-						break; 
-					} 
-					c = m_stack.read(); 
+				for (unsigned i = 1; i < 3; i++)
+				{
+					if (c!=p1[i])
+					{
+						isGET = false;
+						break;
+					}
+					c = m_stack.read();
 				}
 				if (isGET)
 				{
-					// OK! We've got GET! 
+					// OK! We've got GET!
 					if (DEBUGLIB) Serial.println(F("Achei GET"));
 					method = 0;
 				}
@@ -182,14 +187,14 @@ char *EtherEncLib::getParams()
 				// is POST?
 				isPOST = true;
 				c = m_stack.read();
-				for (unsigned i = 1; i < 4; i++) 
-				{ 
-					if (c!=p2[i]) 
-					{ 
-						isPOST = false; 
-						break; 
-					} 
-					c = m_stack.read(); 
+				for (unsigned i = 1; i < 4; i++)
+				{
+					if (c!=p2[i])
+					{
+						isPOST = false;
+						break;
+					}
+					c = m_stack.read();
 				}
 				if (isPOST)
 				{
@@ -209,21 +214,21 @@ char *EtherEncLib::getParams()
 					j = 0;
 
 					//c = m_stack.read();
-			
+
 					// Checking if is not favicon.ico
 					if (c == p3[0])
 					{
 						// is favicon.ico?
 						isFAV = true;
 						c = m_stack.read();
-						for (unsigned i = 1; i < 11; i++) 
-						{ 
-							if (c!=p3[i]) 
-							{ 
-								isFAV = false; 
-								break; 
-							} 
-							c = m_stack.read(); 
+						for (unsigned i = 1; i < 11; i++)
+						{
+							if (c!=p3[i])
+							{
+								isFAV = false;
+								break;
+							}
+							c = m_stack.read();
 						}
 						if (isFAV)
 						{
@@ -232,11 +237,11 @@ char *EtherEncLib::getParams()
 							return &m_httpData[0];
 						}
 					}
-			
-			
+
+
 					// We've got a method
 					// We need to workout the params
-			
+
 					if (c == '?')
 					{
 						if (DEBUGLIB) Serial.println(F("GET OK!"));
@@ -251,7 +256,7 @@ char *EtherEncLib::getParams()
 								tmpData[j] = '\0';
 							}
 							j++;
-							c = m_stack.read(); 
+							c = m_stack.read();
 							if (c == ' ' || c == -1) tmpData[j] = '\0';
 						}
 
@@ -269,7 +274,7 @@ char *EtherEncLib::getParams()
 				if (c == '\r' || c == '\n') {
 					countEnter++;
 					// skip next byte if \r
-					if (c == '\r') c = m_stack.read(); 
+					if (c == '\r') c = m_stack.read();
 				}
 				else countEnter=0;
 
@@ -290,7 +295,7 @@ char *EtherEncLib::getParams()
 							tmpData[j] = '\0';
 						}
 						j++;
-						c = m_stack.read(); 
+						c = m_stack.read();
 						if (c == '\r' || c == '\n' || c == -1) tmpData[j] = '\0';
 					}
 
@@ -313,7 +318,7 @@ char *EtherEncLib::getParams()
 
 	// Retornando HTTP 200 OK!
 	uchar lenData = 17;
-	resposta = "HTTP/1.0 200 OK\r\n";
+	resposta = "HTTP/1.1 200 OK\r\n";
 	m_stack.write(resposta, lenData);
 	m_stack.send();
 
@@ -330,8 +335,8 @@ char *EtherEncLib::getParams()
 	m_stack.send();
 
 	for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = tmpData[i];
-	
-    return &m_httpData[0]; 
+
+    return &m_httpData[0];
 }
 
 

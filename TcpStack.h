@@ -1,5 +1,5 @@
-/* 
- TCP Stack for New EtherEnc based on Enc28Core 
+/*
+ TCP Stack for New EtherEnc based on Enc28Core
  by Renato Aloi NOV 2014
  * seriallink.com.br
  */
@@ -9,10 +9,11 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#define DATA_SIZE		130
+#define DATA_SIZE		95
 #define MAC_SIZE		6
 #define IP_SIZE			4
 #define DEBUG			0
+#define DEBUGLT			1
 #define ETH_ARP_LEN     42
 
 typedef uint8_t  uchar;
@@ -54,7 +55,7 @@ private:
 	void  waitForDMACopy(void);
 public:
 	TcpStack() : m_responding(false), m_packetId(0), m_rxPointer(0), /*m_txPointer(0), */
-				m_recvPayload(0), m_sendPayload(0),  
+				m_recvPayload(0), m_sendPayload(0),
 				m_buffering(false), m_established(false), m_closing(false),
 				m_sessionPort(0), m_serverPort(0)
 	{
@@ -67,10 +68,10 @@ public:
 	void   setMacAddr(uchar* mac) { for (unsigned i = 0; i < MAC_SIZE; i++)  m_macAddr[i] = mac[i]; };
 	void   setIpAddr(uchar* ip) { for (unsigned i = 0; i < IP_SIZE; i++)   m_ipAddr[i] = ip[i]; };
 	void   open(uint serverPort);
-	void   write(char *rd, uint len) { handleStack(); returnHttp((uchar*)rd, len); };
+	void   write(char *rd, uint len) { returnHttp((uchar*)rd, len); }; //handleStack(); };
 	void   send(void);
 	char   read(void); // return char or -1 if reachs end
-	void   close(void) { returnClose(); m_closing = true; }; 
+	void   close(void) { returnClose(); m_closing = true; };
 	bool   established(void) { handleStack(); return m_established; };
 	bool   closing(void) { return m_closing; };
 	bool   buffering(void) { return m_buffering; };
