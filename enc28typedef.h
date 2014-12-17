@@ -383,15 +383,15 @@
 // (note: maximum ethernet frame length would be 1518)
 #define MAX_FRAMELEN        1500        
 
-#define ENC28J60_CONTROL_CS                     10
-#define SPI_MOSI				11
-#define SPI_MISO				12
-#define SPI_SCK					13
+#define ENC28J60_CONTROL_CS                     53
+#define SPI_MOSI				51
+#define SPI_MISO				50
+#define SPI_SCK					52
 
 // set CS to 0 = active
-#define CSACTIVE                                (PORTB = PORTB & 0xFB)
+#define CSACTIVE                                (PORTB = PORTB & 0xFE)
 // set CS to 1 = passive
-#define CSPASSIVE                               (PORTB = PORTB | 0x04)
+#define CSPASSIVE                               (PORTB = PORTB | 0x01)
 #define waitspi()                               while(!(SPSR&(1<<SPIF)))
 
 #endif
