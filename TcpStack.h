@@ -9,7 +9,8 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#define DATA_SIZE		95
+//--- made by SKA ---#define DATA_SIZE		95
+#define DATA_SIZE		145
 #define MAC_SIZE		6
 #define IP_SIZE			4
 #define DEBUG			0

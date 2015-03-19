@@ -43,7 +43,7 @@
 
 #include <Arduino.h>
 #include "EtherEncLib.h"
-
+#include <avr/pgmspace.h>
 
 
 
@@ -69,6 +69,9 @@ unsigned char EtherEncLib::available(void)
 {
 	if (m_stack.established() && !m_stack.closing())
 	{
+		isGet = 0;
+		isPost = 0;
+		isIndexHtml = 0;
 		if (!m_stack.buffering()) return 1;
 	}
 	return 0;
@@ -127,6 +130,7 @@ void EtherEncLib::print(unsigned int val)
 void EtherEncLib::close(void)
 {
     m_stack.close();
+    for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = 0;
 }
 
 char EtherEncLib::read(void)
@@ -139,20 +143,23 @@ char EtherEncLib::read(void)
 // like: ?param1=512&param2=xyz
 char *EtherEncLib::getParams(void)
 {
+    return &m_httpData[0];
+}
+
+// Function 'analize'
+// returns TRUE when validate that GET or POST methods have came.
+unsigned char EtherEncLib::analize(void)
+{
 	char c = m_stack.read();
-	char *p1 = "GET";
-	char *p2 = "POST";
-	char *p3 = "favicon.ico";
+	char *p1 = "GET /";
+	char *p2 = "POST /";
 	char method = -1;
 	char tmpData[BUFFER_PARAMS_LEN];
 	char countEnter = 0;
-	uint j = 0;
-	bool isGET = true;
-	bool isPOST = true;
-	bool isFAV = true;
-	char *resposta;
-
-	//if (DEBUGLIB) Serial.println(F("Lendo dados : "));
+	int  j = -1;
+	bool isGET = false;
+	bool isPOST = false;
+//	char *resposta;
 
 	for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  tmpData[i] = 0;
 
@@ -165,86 +172,64 @@ char *EtherEncLib::getParams(void)
 			{
 				// is GET?
 				isGET = true;
-				c = m_stack.read();
-				for (unsigned i = 1; i < 3; i++)
+				for (unsigned i = 1; i <= 4; i++)
 				{
+					c = m_stack.read();
 					if (c!=p1[i])
 					{
 						isGET = false;
 						break;
 					}
-					c = m_stack.read();
 				}
 				if (isGET)
 				{
 					// OK! We've got GET!
 					if (DEBUGLIB) Serial.println(F("Achei GET"));
 					method = 0;
-				}
+					isGet = 1;
+					isIndexHtml = 1;
+				} else break;
 			}
 			else if (c == p2[0])
 			{
 				// is POST?
 				isPOST = true;
-				c = m_stack.read();
-				for (unsigned i = 1; i < 4; i++)
+				for (unsigned i = 1; i <= 5; i++)
 				{
+					c = m_stack.read();
 					if (c!=p2[i])
 					{
 						isPOST = false;
 						break;
 					}
-					c = m_stack.read();
 				}
 				if (isPOST)
 				{
 					// OK! We've got POST!
 					if (DEBUGLIB) Serial.println(F("Achei POST"));
 					method = 1;
-				}
-			}
+					isPost = 1;
+				} else break;
+			} else break;
 		}
 		else
 		{
 			if (method == 0) // Getting GET parameters
 			{
-				//c = m_stack.read();
-				//if (c == '/')
-				//{
 					j = 0;
-
 					//c = m_stack.read();
 
 					// Checking if is not favicon.ico
-					if (c == p3[0])
-					{
-						// is favicon.ico?
-						isFAV = true;
-						c = m_stack.read();
-						for (unsigned i = 1; i < 11; i++)
-						{
-							if (c!=p3[i])
-							{
-								isFAV = false;
-								break;
-							}
-							c = m_stack.read();
-						}
-						if (isFAV)
-						{
-							if (DEBUGLIB) Serial.println(F("Achei Favicon, saindo"));
-							// return previous http data
-							return &m_httpData[0];
-						}
-					}
-
+//--- deleted by SKA ---
 
 					// We've got a method
 					// We need to workout the params
 
-					if (c == '?')
+//					if (c == '?')
+					if (c != ' ')
 					{
 						if (DEBUGLIB) Serial.println(F("GET OK!"));
+						isIndexHtml = 0;
 						while(c != ' ' && c != -1)
 						{
 							if (j < BUFFER_PARAMS_LEN - 1)
@@ -264,24 +249,42 @@ char *EtherEncLib::getParams(void)
 						if (DEBUGLIB) Serial.println(tmpData);
 
 						break;
-					}
+					} else break;
 				//}
 			}
 			else if (method == 1) // Getting POST parameters
 			{
 				j = 0;
-
-				if (c == '\r' || c == '\n') {
-					countEnter++;
-					// skip next byte if \r
-					if (c == '\r') c = m_stack.read();
+//--- made by SKA ---
+	char c2 = c;
+	int v;
+	while ( countEnter < 1 ) {
+		v = 0;
+		while ( c != '\r' && c2 != '\n' ) {
+			while ( c != '\r' ) {
+				c = m_stack.read();
+				if ( c == -1 ) break;
+//--- uncomment to see HTTP POST request header ---	Serial.print(c);
+				v++;
+			}
+			c2 = m_stack.read();
+			if ( c == -1 || c2 == -1 ) break;
+			if ( c2 != '\n' ) c = c2;
+			else {
+//--- uncomment to see HTTP POST request header ---	Serial.println();
+				countEnter++;
 				}
-				else countEnter=0;
+		}
+		if ( v > 1 ) countEnter = 0;
+		c = '\t'; c2 = c;
+	}
+//--- made by SKA ---
 
 				// Waiting for double enter \r\n\r\n
-				if (countEnter > 1)
+				if (countEnter > 0)
 				{
 					c = m_stack.read();
+					Serial.print(c);
 					// start gathering post data!
 					if (DEBUGLIB) Serial.println(F("POST OK!"));
 					while(c != '\r' && c != '\n' && c != -1)
@@ -296,6 +299,7 @@ char *EtherEncLib::getParams(void)
 						}
 						j++;
 						c = m_stack.read();
+					Serial.print(c);
 						if (c == '\r' || c == '\n' || c == -1) tmpData[j] = '\0';
 					}
 
@@ -315,15 +319,19 @@ char *EtherEncLib::getParams(void)
 	}
 	if (DEBUGLIB) Serial.println();
 
+	if ( j == -1 ) {
+		m_stack.close();
+		return 0;
+	}
 
 	// Retornando HTTP 200 OK!
-	uchar lenData = 17;
+/*--- made by SKA ---	uchar lenData = 17;
 	resposta = "HTTP/1.1 200 OK\r\n";
 	m_stack.write(resposta, lenData);
 	m_stack.send();
-
+*/
 	//while(1);
-
+/*--- made by SKA ---
 	lenData = 25;
     resposta = "Content-Type: text/html\r\n";
 	m_stack.write(resposta, lenData);
@@ -333,12 +341,23 @@ char *EtherEncLib::getParams(void)
     resposta = "Pragma: no-cache\r\n\r\n";
 	m_stack.write(resposta, lenData);
 	m_stack.send();
-
-	for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = tmpData[i];
-
-    return &m_httpData[0];
+*/
+	if ( j > 0 ) {
+		for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = tmpData[i];
+	}
+	return 1;
 }
 
+void EtherEncLib::printHeader(char *respondType, unsigned char dataLen) {
+	char *resposta = (char *)malloc(dataLen);
+	memcpy_P(resposta,respondType,dataLen);
+//	memcpy(resposta,respondType,dataLen);
+	Serial.println(dataLen,DEC);
+	Serial.println(resposta);
+	m_stack.write(resposta,dataLen);
+	m_stack.send();
+	free(resposta);
+}
 
 // --------------------------------------------------------------------------------------------------------------------------------------------
 //

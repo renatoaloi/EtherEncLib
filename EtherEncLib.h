@@ -12,7 +12,8 @@
 #define ETHERENCLIB_H
 
 #define MAX_PRINT_LEN      150
-#define MAX_CHUNK_LEN      15
+//--- made by SKA ---#define MAX_CHUNK_LEN      15
+#define MAX_CHUNK_LEN      65
 #define BUFFER_PARAMS_LEN  50
 #define DEBUGLIB           0
 
@@ -38,6 +39,13 @@ class EtherEncLib
     void          close      (void);
     char	  read       (void);
     char          *getParams (void);
+//--- made by SKA ---
+    unsigned char analize    (void);
+    unsigned char isGet;
+    unsigned char isPost;
+    unsigned char isIndexHtml;
+    void	  printHeader (char *, unsigned char);
+//--- made by SKA ---
 };
 
 #endif
