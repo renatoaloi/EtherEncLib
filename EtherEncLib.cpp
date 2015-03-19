@@ -284,7 +284,6 @@ unsigned char EtherEncLib::analize(void)
 				if (countEnter > 0)
 				{
 					c = m_stack.read();
-					Serial.print(c);
 					// start gathering post data!
 					if (DEBUGLIB) Serial.println(F("POST OK!"));
 					while(c != '\r' && c != '\n' && c != -1)
@@ -299,7 +298,6 @@ unsigned char EtherEncLib::analize(void)
 						}
 						j++;
 						c = m_stack.read();
-					Serial.print(c);
 						if (c == '\r' || c == '\n' || c == -1) tmpData[j] = '\0';
 					}
 
