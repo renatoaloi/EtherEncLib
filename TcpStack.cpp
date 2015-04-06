@@ -90,7 +90,8 @@ void TcpStack::handleStack(void)
 				else
 				{
 					isTcpPacket = (m_tcpData[IP_PROTO_P] == IP_PROTO_TCP_V);
-					isTcpMyPort = (m_tcpData[TCP_DST_PORT_H_P] == 0 && m_tcpData[TCP_DST_PORT_L_P] == m_serverPort);
+//--- made by SKA ---	isTcpMyPort = (m_tcpData[TCP_DST_PORT_H_P] == 0 && m_tcpData[TCP_DST_PORT_L_P] == m_serverPort);
+			isTcpMyPort = ((uint ((uint)m_tcpData[TCP_DST_PORT_H_P] <<8) & 0xFF00) | ((uint)m_tcpData[TCP_DST_PORT_L_P] & 0x00FF ) == m_serverPort);
 
 					if (isTcpPacket && isTcpMyPort)
 					{
