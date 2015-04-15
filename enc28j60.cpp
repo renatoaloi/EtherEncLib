@@ -13,7 +13,7 @@ static WORD_VAL         NextPacketLocation;
 static WORD_VAL         CurrentPacketLocation;
 static unsigned char    Enc28j60Bank;
 static unsigned char    *m_macadd;//[6];
-static unsigned char    *m_ipadd;//[4];
+//--- made by SKA ---static unsigned char    *m_ipadd;//[4];
 
 
 /******************************************************************************
@@ -535,7 +535,8 @@ void MACSendTx(void)
  *
  * Note:            None
  *****************************************************************************/
-BOOL IsMACSendTx(void)
+//--- made by SKA ---BOOL IsMACSendTx(void)
+bool IsMACSendTx(void)
 {
     return !((enc28j60Read(ECON1) & ECON1_TXRTS) == ECON1_TXRTS);
 }
@@ -891,7 +892,8 @@ void DMACopyFrom(FLOW flow, unsigned int sourceAddr, unsigned int len)
  *
  * Note:            None
  *****************************************************************************/
-BOOL IsDMACopyDone(void)
+//--- made by SKA ---BOOL IsDMACopyDone(void)
+bool IsDMACopyDone(void)
 {
     return !((enc28j60Read(ECON1) & ECON1_DMAST) == ECON1_DMAST);
 }
@@ -953,11 +955,13 @@ static void enc28j60WriteOp(uint8_t op, uint8_t address, uint8_t data)
 {
         CSACTIVE;
         // issue write command
-        SPDR = op | (address & ADDR_MASK);
-        waitspi();
+/*--- made by SKA ---        SPDR = op | (address & ADDR_MASK);
+        waitspi();*/
+	SPI.transfer(op | (address & ADDR_MASK));
         // write data
-        SPDR = data;
-        waitspi();
+/*--- made by SKA ---        SPDR = data;
+        waitspi();*/
+	SPI.transfer(data);
         CSPASSIVE;
 }
 
@@ -1003,14 +1007,16 @@ static void enc28j60WriteBuffer(uint16_t len, uint8_t* data)
 {
     CSACTIVE;
     // issue write command
-    SPDR = ENC28J60_WRITE_BUF_MEM;
-    waitspi();
+/*--- made by SKA ---    SPDR = ENC28J60_WRITE_BUF_MEM;
+    waitspi();*/
+    SPI.transfer(ENC28J60_WRITE_BUF_MEM);
     while(len)
     {
         len--;
         // read data
-        SPDR = *data;
-        waitspi();
+/*--- made by SKA ---        SPDR = *data;
+        waitspi();*/
+	SPI.transfer((byte)* data);
         if (len) data++;
     }
     // release CS
@@ -1018,7 +1024,7 @@ static void enc28j60WriteBuffer(uint16_t len, uint8_t* data)
 }
 
 /******************************************************************************
- * Function:        static uint8_t enc28j60Read(uint8_t address)
+ * Function:        static uint8_t enc28j60ReadOp(uint8_t address)
  *
  * PreCondition:    None
  *
@@ -1036,16 +1042,19 @@ static uint8_t enc28j60ReadOp(uint8_t op, uint8_t address)
 {
         CSACTIVE;
         // issue read command
-        SPDR = op | (address & ADDR_MASK);
-        waitspi();
+/*--- made by SKA ---        SPDR = op | (address & ADDR_MASK);
+        waitspi();*/
+	SPI.transfer(op | (address & ADDR_MASK));
         // read data
-        SPDR = 0x00;
-        waitspi();
+/*--- made by SKA ---        SPDR = 0x00;
+        waitspi();*/
+	SPI.transfer(0x00);
         // do dummy read if needed (for mac and mii, see datasheet page 29)
         if(address & 0x80)
         {
-            SPDR = 0x00;
-            waitspi();
+/*--- made by SKA ---            SPDR = 0x00;
+            waitspi();*/
+	    SPI.transfer(0x00);
         }
         // release CS
         CSPASSIVE;
@@ -1094,15 +1103,17 @@ static void enc28j60ReadBuffer(uint16_t len, uint8_t* data)
 {
         CSACTIVE;
         // issue read command
-        SPDR = ENC28J60_READ_BUF_MEM;
-        waitspi();
+/*--- made by SKA ---        SPDR = ENC28J60_READ_BUF_MEM;
+        waitspi();*/
+	SPI.transfer(ENC28J60_READ_BUF_MEM);
         while(len)
         {
                 len--;
                 // read data
-                SPDR = 0x00;
+/*--- made by SKA ---                SPDR = 0x00;
                 waitspi();
-                *data = SPDR;
+                *data = SPDR;*/
+                *data = SPI.transfer(0x00);
                 data++;
         }
         //*data='\0';

@@ -5,10 +5,11 @@
  */
 
 #include "TcpStack.h"
-
+//--- made by SKA ---
+#include "enc28j60.h"
 
 extern "C" {
-#include "enc28j60.h"
+//--- made by SKA ---#include "enc28j60.h"
 #include "checksum.h"
 }
 

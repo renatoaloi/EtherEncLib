@@ -4,6 +4,7 @@
 //--- don't forget to apply patch SD_soft_atmega328 to SD library ---
 //--- and copy www dir into a root of SD card ---
 
+#include <SPI.h>
 #include <SD.h>
 #include <EtherEncLib.h>
 #include <avr/pgmspace.h>

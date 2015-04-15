@@ -2,10 +2,13 @@
 #include <stdint.h>
 #include <avr/io.h>
 
+//--- made by SKA ---
+#include <SPI.h>
+
 #define low(a)          (a&0xFF)
 #define high(a)         ((a>>8)&0xFF)
 
-typedef enum _BOOL { FALSE = 0, TRUE } BOOL;
+//typedef enum _BOOL { FALSE = 0, TRUE } BOOL;
 typedef enum _FLOW { RX = 0, TX } FLOW;
 
 typedef union
@@ -56,7 +59,8 @@ void 		MACWriteTXBuffer(unsigned char* _buf, unsigned int _size);
 void 		MACWriteTXBufferOffset(unsigned char* _buf, unsigned int _size, unsigned int offset_len);
 void        MACWriteTXBufferOffset2(uint8_t* _buf, uint16_t _size, uint16_t offset_len, uint16_t offset_val);
 void 		MACSendTx(void);
-BOOL 		IsMACSendTx(void);
+//--- made by SKA ---BOOL 		IsMACSendTx(void);
+bool 		IsMACSendTx(void);
 
 /******************************************************************************
  * SOCKET APPLICATION LAYER METHOD DECLARATIONS
@@ -74,7 +78,8 @@ void 		SOCKETSetTxPointer(unsigned int addr);
  *****************************************************************************/
 void DMACopyTo(FLOW flow, unsigned int destAddr, unsigned int len);
 void DMACopyFrom(FLOW flow, unsigned int sourceAddr, unsigned int len);
-BOOL IsDMACopyDone(void);
+//--- made by SKA ---BOOL IsDMACopyDone(void);
+bool IsDMACopyDone(void);
 
 //
 
