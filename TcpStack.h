@@ -8,6 +8,8 @@
 
 #include <Arduino.h>
 #include <stdint.h>
+//--- made by SKA ---
+#include <SPI.h>
 
 //--- made by SKA ---#define DATA_SIZE		95
 #define DATA_SIZE		145

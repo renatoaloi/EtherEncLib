@@ -199,7 +199,7 @@ void MACEnableRecv(void)
 {
     // 5.
     
-    // enable interrutps
+    // enable interrupts
     //enc28j60WriteOp(ENC28J60_BIT_FIELD_SET, EIE, EIE_INTIE|EIE_PKTIE);
     // enable packet reception
     enc28j60WriteOp(ENC28J60_BIT_FIELD_SET, ECON1, ECON1_RXEN);

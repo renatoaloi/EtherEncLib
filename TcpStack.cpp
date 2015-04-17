@@ -884,19 +884,22 @@ void TcpStack::open(uint serverPort)
 
 	// initialize I/O
 	// ss as output:
-	pinMode(ENC28J60_CONTROL_CS, OUTPUT);
+//--- made by SKA ---
+//	pinMode(ENC28J60_CONTROL_CS, OUTPUT);
 	//CS Passive mode
-	CSPASSIVE;
+/*	CSPASSIVE;
 	pinMode(SPI_MOSI, OUTPUT);
 	pinMode(SPI_SCK, OUTPUT);
 	pinMode(SPI_MISO, INPUT);
 	digitalWrite(SPI_MOSI, LOW);
 	digitalWrite(SPI_SCK, LOW);
-
+*/
 	// initialize SPI interface
 	// master mode and Fosc/2 clock:
-	SPCR = (1<<SPE)|(1<<MSTR);
-	SPSR |= (1<<SPI2X);
+/*	SPCR = (1<<SPE)|(1<<MSTR);
+	SPSR |= (1<<SPI2X);*/
+	SPI.begin();
+//--- made by SKA ---
 
 	if (DEBUGLT) { Serial.println(F("Configuring Ethernet Layer...")); }
 	if (DEBUGLT) { Serial.print(F("IPAddr: ")); Serial.print(m_ipAddr[0], DEC); Serial.print(F(".")); Serial.print(m_ipAddr[1], DEC); }
