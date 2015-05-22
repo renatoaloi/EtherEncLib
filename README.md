@@ -3,6 +3,14 @@ EtherEncLib
 
 Ethernet ENC28J60 Library for Arduino
 
+May 2015
+REV 3.1 
+- SKA made new code for POST treatment
+- New example with SDCard made by SKA
+- ENC28J60' 8K Dual RAM final implementation by Renato Aloi
+- New example for HelloWorld with low RAM usage 
+- New example based on SKA work for WebServer
+
 REV 3 - New version! Now using Enc28CoreLib! For now, see new version at enc28coremerge branch!
 https://github.com/renatoaloi/EtherEncLib/tree/enc28coremerge
 New Commit with HTTP POST implemented! I will update comments and docs later! 
