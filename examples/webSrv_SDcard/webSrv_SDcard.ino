@@ -39,7 +39,7 @@ byte i;
 }
 
 void loop() {
-  if ( eElib.available() && eElib.analize() ) {
+  if ( eElib.available() ) { // && eElib.analize() ) { -- by Renato Aloi (May 2015)
 
 /*--- for debug purpose ---    Serial.print("+");
     if ( eElib.isIndexHtml ) Serial.print("-");
@@ -49,13 +49,13 @@ void loop() {
       Serial.println(eElib.getParams());
     if ( strncmp(eElib.getParams(),"favicon.ico",11) == 0 ) {
       fd = SD.open(HTML_ROOT"VID_4.PNG");
-      eElib.printHeader((char *)&resp200Png[0],strlen_P(&resp200Png[0]));
+      eElib.print((char *)&resp200Png[0],strlen_P(&resp200Png[0]));
     } else if ( eElib.isIndexHtml ) {
       fd = SD.open(HTML_ROOT"INDEX~1.HTM");
-      eElib.printHeader((char *)&resp200Txt[0],strlen_P(&resp200Txt[0]));
+      eElib.print((char *)&resp200Txt[0],strlen_P(&resp200Txt[0]));
     } else {
 //--- for DEBUG ---
-        eElib.printHeader((char *)&resp200Gif[0],strlen_P(&resp200Gif[0]));
+        eElib.print((char *)&resp200Gif[0],strlen_P(&resp200Gif[0]));
         fd = SD.open(HTML_ROOT"ABC.123");
         Serial.println("file www/ABC.123 does not exists..");
 //---

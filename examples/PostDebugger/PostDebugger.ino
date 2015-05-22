@@ -3,19 +3,25 @@
              Tests POST functionality
   Created by Renato Aloi, Nov, 2014.
   Released into the public domain.
+  adapted by Renato Aloi
+  May 2015
 */
 
+#include <SPI.h>
 #include <EtherEncLib.h>
+#include <avr/pgmspace.h>
+
+static unsigned char ipaddr[] = { 192, 168, 0, 125 };
+static unsigned char macaddr[] = { 0x00, 0x11, 0x22, 0x44, 0x00, 0x25 };
 
 EtherEncLib lib(80);
-
-static unsigned char ipaddr[] = { 192, 168, 1, 25 };
-static unsigned char macaddr[] = { 0x54, 0x55, 0x58, 0x10, 0x00, 0x25 };
 
 void setup()
 {
     Serial.begin(115200);
     
+    pinMode(10,OUTPUT);	//--- ? -- SS pin must be output # by Renato Aloi
+
     //
     // Starting the lib
     //
@@ -57,7 +63,8 @@ void loop()
         
         lib.print("<form method=POST>Type your name: ");
         lib.print("<input type=text name=nome ");
-        if (strncmp(&params[0], "nome=", 5) == 0 )
+	if (lib.isPost)
+        //if (strncmp(&params[0], "nome=", 5) == 0 )
         {
           lib.print(" value='");
           lib.print((char*)&params[5]);
@@ -67,8 +74,8 @@ void loop()
         lib.print("<input type=submit value='Go!' />");
         lib.print("</form>");
         
-        
-        if (strncmp(&params[0], "nome=", 5) == 0 )
+        if (lib.isPost)
+        //if (strncmp(&params[0], "nome=", 5) == 0 )
         {
           lib.print("<H1>Hello ");
           lib.print((char*)&params[5]);

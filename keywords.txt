@@ -1,6 +1,5 @@
 EtherEncLib	KEYWORD1
 getParams	KEYWORD2
-analize	KEYWORD2
 isGet	KEYWORD2
 isPost	KEYWORD2
 isIndexHtml	KEYWORD2	

@@ -57,9 +57,10 @@ void 		MACReadRXBuffer(unsigned char* _buf, unsigned int _size);
 void 		MACDiscardRx(void);
 void 		MACWriteTXBuffer(unsigned char* _buf, unsigned int _size);
 void 		MACWriteTXBufferOffset(unsigned char* _buf, unsigned int _size, unsigned int offset_len);
-void        MACWriteTXBufferOffset2(uint8_t* _buf, uint16_t _size, uint16_t offset_len, uint16_t offset_val);
+void        	MACWriteTXBufferOffset2(uint8_t* _buf, uint16_t _size, uint16_t offset_len, uint16_t offset_val);
+void 		MACWriteTXEndPt(unsigned int _size);
 void 		MACSendTx(void);
-//--- made by SKA ---BOOL 		IsMACSendTx(void);
+//--- made by SKA ---
 bool 		IsMACSendTx(void);
 
 /******************************************************************************
@@ -76,16 +77,7 @@ void 		SOCKETSetTxPointer(unsigned int addr);
 /******************************************************************************
  * DMA COPY LAYER METHOD DECLARATIONS
  *****************************************************************************/
-void DMACopyTo(FLOW flow, unsigned int destAddr, unsigned int len);
-void DMACopyFrom(FLOW flow, unsigned int sourceAddr, unsigned int len);
-//--- made by SKA ---BOOL IsDMACopyDone(void);
+void DMACopy(FLOW flow, unsigned int destAddr, unsigned int len);
+//--- made by SKA ---
 bool IsDMACopyDone(void);
-
-//
-
-
-
-
-
-
 

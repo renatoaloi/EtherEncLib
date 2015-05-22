@@ -5,11 +5,11 @@
   Released into the public domain.
 
   Description ::
-  HTTP 1.0/1.1 GET Listener for web browsing integration.
+  HTTP 1.0/1.1 GET/POST Listener for web browsing integration.
 
   What DO you get ::
   - ARP and ICMP treatment
-  - HTTP GET action over TCP-IP
+  - HTTP GET and POST action over TCP-IP
   - Very responsive engine, and very fast!
   - HTTPd engine with "One Way" implementation
     - One way flow = SYS..ACK..PUSH..FIN
@@ -30,9 +30,7 @@
   - This is a very limited implementation of TCP-IP protocol
     - Do not expect implementations like FTP, SMTP, etc
     - Only one aspect of TCP/HTTP service was implemented
-  - On HTTP protocol, only GET form method was implemented
-    - POST method is NOT implemented
-    - POST method is ready to go, having already commented spots to code
+  - OK! by Renato Aloi and SKA, May 2015
   - Faulty handle for diferent Source ports
     - The system will only handle one source port incomming connection
     - Other request arriving from other ports will be handled only at end of current request
@@ -72,57 +70,75 @@ unsigned char EtherEncLib::available(void)
 		isGet = 0;
 		isPost = 0;
 		isIndexHtml = 0;
-		if (!m_stack.buffering()) return 1;
+		if (!m_stack.buffering()) return analize();
 	}
 	return 0;
+}
+
+// Print method
+// Sends data to client on byte at time
+void EtherEncLib::print(char c)
+{
+	// REV 3.1 by Renato Aloi (May 2015)
+	//if (DEBUGLIB) Serial.print(F("Now Really Printing: "));
+	if (DEBUGLIB) Serial.print(c);
+	m_stack.write(c);
 }
 
 // Print method
 // Sends data to client in small chunks
 void EtherEncLib::print(char *rd)
 {
-    // String length calc.
-    unsigned int l = getPrintStringLen(rd);
+    // REV 3.1 by Renato Aloi (May 2015)
+    // TODO:
+    // it will hang up if it is not a string with null terminator!
 
-    // Checking if total len is greather
-    // than max chunk length
-    if (l > MAX_CHUNK_LEN)
-    {
-        // In this case, slice it up
-        // Calculating total chunks and additional
-        // "left overs" chunk
-        unsigned char divInt  = l / MAX_CHUNK_LEN;
-        unsigned char divRest = l % MAX_CHUNK_LEN;
-
-        //if (DEBUGLIB) { Serial.print("Rodando: "); Serial.print(divInt, DEC); Serial.print(" - "); Serial.print(divRest, DEC); Serial.print(" :: de: "); Serial.println(l, DEC); }
-
-        // Slicing role message in chunks
-        for (int i = 0; i < divInt; i++)
-        {
-            m_stack.write(&rd[i * MAX_CHUNK_LEN], MAX_CHUNK_LEN);
-			m_stack.send();
-        }
-
-        // One last chunk to send "left overs"
-		m_stack.write(&rd[divInt * MAX_CHUNK_LEN], divRest);
-		m_stack.send();
-    }
-    else
-    {
-        // If total length is smaller than
-        // max chunk size, no need slicing
-        m_stack.write(rd, l);
-		m_stack.send();
-    }
+    if (DEBUGLIB) Serial.println(F("Printing1: "));
+    do { 
+	if (*(rd) != 0) 
+	{
+		print((char)*(rd)); 
+	}
+    } while(*(rd++) != 0);    
+    if (DEBUGLIB) Serial.println();
 }
 
 // Print method
 // Int values version of print method
 void EtherEncLib::print(unsigned int val)
 {
+    if (DEBUGLIB) Serial.println(F("Printing2: "));
     char sI[] = { 0, 0, 0, 0, 0 };
     itoa(val, sI, 10);
     print(sI);
+    if (DEBUGLIB) Serial.println();
+}
+
+// Print method
+// Int values version of print method
+void EtherEncLib::print(int val)
+{
+    if (DEBUGLIB) Serial.println(F("Printing2: "));
+    char sI[] = { 0, 0, 0, 0, 0 };
+    itoa(val, sI, 10);
+    print(sI);
+    if (DEBUGLIB) Serial.println();
+}
+
+void EtherEncLib::print(char *respondType, unsigned char dataLen) 
+{
+	// PROGMEM with 1-byte local buffer
+	// REV 3.1 by Renato Aloi (May 2015)
+	if (DEBUGLIB) Serial.println(F("Printing3: "));
+	char respond[] = { 0 };
+	for (unsigned char i = 0; i < dataLen; i++)
+	{
+	  memcpy_P(respond,respondType+i,1);
+	  print(respond[0]);
+	}
+	if (DEBUGLIB) Serial.println();
+	if (DEBUGLIB) { Serial.print(F("FreeRAM: ")); Serial.print(freeRam()); }
+	if (DEBUGLIB) Serial.println();
 }
 
 // Close method
@@ -131,6 +147,7 @@ void EtherEncLib::close(void)
 {
     m_stack.close();
     for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = 0;
+    if (DEBUGLIB) { Serial.print(F("FreeRAM: ")); Serial.print(freeRam()); }
 }
 
 char EtherEncLib::read(void)
@@ -146,6 +163,15 @@ char *EtherEncLib::getParams(void)
     return &m_httpData[0];
 }
 
+// moved near to print funcs by Renato Aloi
+
+// --------------------------------------------------------------------------------------------------------------------------------------------
+//
+// Priv. Funcs
+//
+// --------------------------------------------------------------------------------------------------------------------------------------------
+
+
 // Function 'analize'
 // returns TRUE when validate that GET or POST methods have came.
 unsigned char EtherEncLib::analize(void)
@@ -154,14 +180,14 @@ unsigned char EtherEncLib::analize(void)
 	char *p1 = "GET /";
 	char *p2 = "POST /";
 	char method = -1;
-	char tmpData[BUFFER_PARAMS_LEN];
+	//char tmpData[BUFFER_PARAMS_LEN]; -- not needed, using m_httpData instead (by Renato Aloi, May 2015)
 	char countEnter = 0;
 	int  j = -1;
 	bool isGET = false;
 	bool isPOST = false;
 //	char *resposta;
 
-	for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  tmpData[i] = 0;
+	for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = 0;
 
 	while(c != -1)
 	{
@@ -216,41 +242,31 @@ unsigned char EtherEncLib::analize(void)
 		{
 			if (method == 0) // Getting GET parameters
 			{
-					j = 0;
-					//c = m_stack.read();
-
-					// Checking if is not favicon.ico
-//--- deleted by SKA ---
-
-					// We've got a method
-					// We need to workout the params
-
-//					if (c == '?')
-					if (c != ' ')
+				j = 0;
+				if (c != ' ')
+				{
+					if (DEBUGLIB) Serial.println(F("GET OK!"));
+					isIndexHtml = 0;
+					while(c != ' ' && c != -1)
 					{
-						if (DEBUGLIB) Serial.println(F("GET OK!"));
-						isIndexHtml = 0;
-						while(c != ' ' && c != -1)
+						if (j < BUFFER_PARAMS_LEN - 1)
 						{
-							if (j < BUFFER_PARAMS_LEN - 1)
-							{
-								tmpData[j] = c;
-							}
-							else if (j < BUFFER_PARAMS_LEN)
-							{
-								tmpData[j] = '\0';
-							}
-							j++;
-							c = m_stack.read();
-							if (c == ' ' || c == -1) tmpData[j] = '\0';
+							m_httpData[j] = c;
 						}
+						else if (j < BUFFER_PARAMS_LEN)
+						{
+							m_httpData[j] = '\0';
+						}
+						j++;
+						c = m_stack.read();
+						if (c == ' ' || c == -1) m_httpData[j] = '\0';
+					}
 
-						if (DEBUGLIB) Serial.print(F("Achei Parametros:"));
-						if (DEBUGLIB) Serial.println(tmpData);
+					if (DEBUGLIB) Serial.print(F("Achei Parametros:"));
+					if (DEBUGLIB) Serial.println(m_httpData);
 
-						break;
-					} else break;
-				//}
+					break;
+				} else break;
 			}
 			else if (method == 1) // Getting POST parameters
 			{
@@ -290,21 +306,21 @@ unsigned char EtherEncLib::analize(void)
 					{
 						if (j < BUFFER_PARAMS_LEN - 1)
 						{
-							tmpData[j] = c;
+							m_httpData[j] = c;
 						}
 						else if (j < BUFFER_PARAMS_LEN)
 						{
-							tmpData[j] = '\0';
+							m_httpData[j] = '\0';
 						}
 						j++;
 						c = m_stack.read();
-						if (c == '\r' || c == '\n' || c == -1) tmpData[j] = '\0';
+						if (c == '\r' || c == '\n' || c == -1) m_httpData[j] = '\0';
 					}
 
 					if (DEBUGLIB) Serial.print(F("Achei Parametros POST:"));
 					for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++) {
-						if (DEBUGLIB) Serial.print(tmpData[i], DEC);
-						if (DEBUGLIB && i < BUFFER_PARAMS_LEN - 1) Serial.print(", ");
+						if (DEBUGLIB) Serial.print(m_httpData[i], DEC);
+						if (DEBUGLIB && i < BUFFER_PARAMS_LEN - 1) Serial.print(F(", "));
 					}
 					if (DEBUGLIB) Serial.println();
 
@@ -321,58 +337,11 @@ unsigned char EtherEncLib::analize(void)
 		m_stack.close();
 		return 0;
 	}
-
-	// Retornando HTTP 200 OK!
-/*--- made by SKA ---	uchar lenData = 17;
-	resposta = "HTTP/1.1 200 OK\r\n";
-	m_stack.write(resposta, lenData);
-	m_stack.send();
-*/
-	//while(1);
-/*--- made by SKA ---
-	lenData = 25;
-    resposta = "Content-Type: text/html\r\n";
-	m_stack.write(resposta, lenData);
-	m_stack.send();
-
-	lenData = 20;
-    resposta = "Pragma: no-cache\r\n\r\n";
-	m_stack.write(resposta, lenData);
-	m_stack.send();
-*/
-	if ( j > 0 ) {
-		for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = tmpData[i];
-	}
+	// removed by Renato Aloi 
+	
 	return 1;
 }
 
-void EtherEncLib::printHeader(char *respondType, unsigned char dataLen) {
-	char *resposta = (char *)malloc(dataLen);
-	memcpy_P(resposta,respondType,dataLen);
-//	memcpy(resposta,respondType,dataLen);
-	Serial.println(dataLen,DEC);
-	Serial.println(resposta);
-	m_stack.write(resposta,dataLen);
-	m_stack.send();
-	free(resposta);
-}
-
-// --------------------------------------------------------------------------------------------------------------------------------------------
-//
-// Priv. Funcs
-//
-// --------------------------------------------------------------------------------------------------------------------------------------------
 
 
-unsigned int EtherEncLib::getPrintStringLen(char *_rd)
-{
-    unsigned int _len = 0;
-    for (int i = 0; i < MAX_PRINT_LEN; i++)
-    {
-        if (_rd[i]) _len++;
-        else break;
-    }
-    if (_len > MAX_PRINT_LEN) _len = MAX_PRINT_LEN;
-    return _len;
-}
 
