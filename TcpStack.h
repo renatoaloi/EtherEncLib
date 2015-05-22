@@ -17,8 +17,10 @@
 				    // by Renato Aloi (May 2015)
 #define MAC_SIZE		6
 #define IP_SIZE			4
-#define DEBUG			1
+#define DEBUG			0
 #define DEBUGLT			1
+#define DEBUGTST		0 // Debugging why only working with DEBUG flag on. 
+				  //now it is ok, see delay at close function
 #define ETH_ARP_LEN     	42
 
 typedef uint8_t  uchar;

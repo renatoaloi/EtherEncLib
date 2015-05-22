@@ -634,6 +634,7 @@ void TcpStack::returnHttp(void) //(uchar* _buf, uint _size)
 	m_sendData[TCP_CHECKSUM_H_P] = ((ck>>8)&0xFF);
 	m_sendData[TCP_CHECKSUM_L_P] = ((ck)&0xFF);
 
+	
 	/*if (DEBUG) Serial.println();
 	if (DEBUG) Serial.print(F("m_sendData: 0x"));
 	if (DEBUG) { for (unsigned i = 0; i < DATA_SIZE; i++)
@@ -718,6 +719,9 @@ void TcpStack::returnClose(void)
 		m_sendData[ETH_SRC_MAC_P + i] = m_macAddr[i];
 	}
 	if (DEBUG) Serial.println();
+
+	// need delay here! BUG @ REV 3.1
+	delay(1);
 
 	if (DEBUG) {
 		Serial.print(F("m_sendPayload: "));
