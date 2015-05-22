@@ -345,7 +345,7 @@
 #define RXSTOP_INIT         0x800       //0x7FF   //(0x1FFF-0x0600-1)
 // start TX buffer at 0x1FFF-0x0600,
 // space for one full ethernet frame (~1500 bytes)
-#define TXSTART_INIT        0x801   //(0x1FFF-0x0600)
+#define TXSTART_INIT        0x802   //(0x1FFF-0x0600)
 // stp TX buffer at end of mem
 #define TXSTOP_INIT         0x1000  //0x1FFF
 

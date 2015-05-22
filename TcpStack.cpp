@@ -5,10 +5,11 @@
  */
 
 #include "TcpStack.h"
-
+//--- made by SKA ---
+#include "enc28j60.h"
 
 extern "C" {
-#include "enc28j60.h"
+//--- made by SKA ---#include "enc28j60.h"
 #include "checksum.h"
 }
 
@@ -33,19 +34,19 @@ void TcpStack::handleStack(void)
 	// Check for incoming packets
 	if (MACGetPacketCount() > 0)
 	{
-		if (DEBUG) { Serial.println("Got Packet!"); }
+		if (DEBUG) { Serial.println(F("Got Packet!")); }
 
-		// Getting Packet into buffer
+		// Getting Packet from enc28 hardware's buffer
 		MACReadRXBuffer(m_tcpData, DATA_SIZE);
 		/*
 		if (DEBUG)
 		{
-			Serial.print("m_tcpData: ");
+			Serial.print(F("m_tcpData: "));
 			for (unsigned int i = 0; i < DATA_SIZE + 1; i++)
 			{
-				Serial.print("0x");
+				Serial.print(F("0x"));
 				Serial.print(m_tcpData[i], HEX);
-				Serial.print(" ");
+				Serial.print(F(" "));
 			}
 			Serial.println();
 		}
@@ -57,14 +58,14 @@ void TcpStack::handleStack(void)
 
 		if (arp)
 		{
-			if (DEBUG) Serial.println("Got ARP!");
+			if (DEBUG) Serial.println(F("Got ARP!"));
 
 			ipCheckOk = ((m_tcpData[ETH_ARP_DST_IP_P + 0] == m_ipAddr[0]) && (m_tcpData[ETH_ARP_DST_IP_P + 1] == m_ipAddr[1])
 				&& (m_tcpData[ETH_ARP_DST_IP_P + 2] == m_ipAddr[2]) && (m_tcpData[ETH_ARP_DST_IP_P + 3] == m_ipAddr[3]));
 
 			if (ipCheckOk)
 			{
-				if (DEBUG) Serial.println("Got ARP for my IP!");
+				if (DEBUG) Serial.println(F("Got ARP for my IP!"));
 				returnArp();
 			}
 		}
@@ -78,23 +79,24 @@ void TcpStack::handleStack(void)
 
 			if (ipV4LenOk && ipCheckOk)
 			{
-				//if (DEBUG) Serial.println("Got IPV4 OK And IpIsMine!");
+				//if (DEBUG) Serial.println(F("Got IPV4 OK And IpIsMine!"));
 
 				icmp = (m_tcpData[IP_PROTO_P] == IP_PROTO_ICMP_V && m_tcpData[ICMP_TYPE_P] == ICMP_TYPE_ECHOREQUEST_V);
 
 				if (icmp)
 				{
-					if (DEBUG) Serial.println("Got ICMP!");
+					if (DEBUG) Serial.println(F("Got ICMP!"));
 					returnIcmp();
 				}
 				else
 				{
 					isTcpPacket = (m_tcpData[IP_PROTO_P] == IP_PROTO_TCP_V);
-					isTcpMyPort = (m_tcpData[TCP_DST_PORT_H_P] == 0 && m_tcpData[TCP_DST_PORT_L_P] == m_serverPort);
+//--- made by SKA ---	isTcpMyPort = (m_tcpData[TCP_DST_PORT_H_P] == 0 && m_tcpData[TCP_DST_PORT_L_P] == m_serverPort);
+			isTcpMyPort = ((uint ((uint)m_tcpData[TCP_DST_PORT_H_P] <<8) & 0xFF00) | ((uint)m_tcpData[TCP_DST_PORT_L_P] & 0x00FF ) == m_serverPort);
 
 					if (isTcpPacket && isTcpMyPort)
 					{
-						//if (DEBUG) Serial.println("Got TCPIP!");
+						//if (DEBUG) Serial.println(F("Got TCPIP!"));
 
 						synFlag = (m_tcpData[TCP_FLAGS_P] == TCP_FLAGS_SYN_V);
 						ackFlag = (m_tcpData[TCP_FLAGS_P] == TCP_FLAGS_ACK_V);
@@ -106,11 +108,11 @@ void TcpStack::handleStack(void)
 
 						if (synFlag)
 						{
-							if (DEBUG) Serial.println("Got SYN!");
+							if (DEBUG) Serial.print(F("Got SYN!"));
 
 							if (!isSession())
 							{
-								if (DEBUG) Serial.println("new session!");
+								if (DEBUG) Serial.println(F("new session!"));
 								// new session
 								m_sessionPort = (uint)(((uint)(m_tcpData[TCP_SRC_PORT_H_P]<<8) & 0xFF00) | (m_tcpData[TCP_SRC_PORT_L_P] & 0x00FF));
 								m_seqNum.b[0] = m_tcpData[TCP_SEQ_P+3];
@@ -125,22 +127,26 @@ void TcpStack::handleStack(void)
 								if (DEBUG)
 								{
 									Serial.println();
-									Serial.print("m_sessionPort: ");
+									Serial.print(F("m_sessionPort: "));
 									Serial.println(m_sessionPort, DEC);
-									Serial.print("m_seqNum: ");
+									Serial.print(F("m_seqNum: "));
 									Serial.println(m_seqNum.l, DEC);
-									Serial.print("m_ackNum: ");
+									Serial.print(F("m_ackNum: "));
 									Serial.println(m_ackNum.l, DEC);
 									Serial.println();
 								}
 
 								returnSyn();
+
+								if (DEBUGLT) { Serial.print(F("RAM avail: ")); Serial.println(freeRam()); }
 							}
 							else
 							{
 								// session running already
 								//sendFinToPorOutOfSession();
 							}
+
+							
 						}
 
 						if (ackFlag)
@@ -174,7 +180,7 @@ void TcpStack::handleStack(void)
 								// session exists and is buffering!
 								if (m_buffering)
 								{
-									if (DEBUG) Serial.println("buffering!");
+									if (DEBUG) Serial.println(F("buffering!"));
 
 									// REV 3
 									// DMA Zero-Copy to socket space
@@ -190,15 +196,12 @@ void TcpStack::handleStack(void)
 										m_clientIpAddr[i] = m_tcpData[IP_SRC_P + i];
 
 
-									if (DEBUG) {
-										Serial.print(F("m_recvPayload: "));
-										Serial.println(m_recvPayload, DEC);
-									}
+									if (DEBUG) { Serial.print(F("m_recvPayload: ")); Serial.println(m_recvPayload, DEC); }
 
 									// Copy packet from
 									// ENC28J60's RX buffer to socket RX buffer
 									// TODO: Manage sockets: 0 - socket 1; 1 - socket 2
-									DMACopyTo(RX, SOCKET_RX_START(0), m_recvPayload + ETH_BUFF_SIZE);
+									DMACopy(RX, SOCKET_RX_START(0), m_recvPayload + ETH_BUFF_SIZE);
 									waitForDMACopy();
 
 									// Subtracting packet size from total = data size
@@ -208,7 +211,7 @@ void TcpStack::handleStack(void)
 									// Now we can discard packet freeing space from
 									// RXTX FIFO, because we already moved the data
 									// to Socket FIFO, far away from being overwriten
-									if (DEBUG) Serial.println("buffering done!");
+									if (DEBUG) Serial.println(F("buffering done!"));
 
 									// respond ack for push at once
 									// to avoid server become anoying
@@ -228,19 +231,20 @@ void TcpStack::handleStack(void)
 								// session exists and is closing!
 								if (m_closing)
 								{
-									if (DEBUG) Serial.println("closing!");
+									if (DEBUG) Serial.println(F("closing!"));
 
 									// Let client know that we know
 									// it is the way it works
 									returnFin();
 
 									m_rxPointer = 0;
-									//m_txPointer = 0; // For future use
+									m_txPointer = 0; 
 									m_seqNum.l = 0;
 									m_ackNum.l = 0;
 									// cleaning up the mess!
 									m_recvPayload = 0;
 									m_sendPayload = 0;
+									m_sizePayload = 0;
 									//m_packetId = 0; // no need, it will overflow sometime
 									m_sessionPort = 0;
 									m_buffering = false;
@@ -254,22 +258,24 @@ void TcpStack::handleStack(void)
 				}
 			}
 		}
-		if (DEBUG) Serial.println("Descartando pacote tratado!");
+		if (DEBUG) Serial.println(F("Descartando pacote tratado!"));
 		MACDiscardRx();
 	}
 }
 
 void TcpStack::returnArp(void)
 {
+	// Clearing buffer
+	for (unsigned i = 0; i < DATA_SIZE; i++) m_sendData[i] = 0;
 	// Filling send buffer
-	for (unsigned i = 0; i < DATA_SIZE; i++) m_sendData[i] = m_tcpData[i];
+	for (unsigned i = 0; i < ETH_ARP_LEN; i++) m_sendData[i] = m_tcpData[i];
 
 	for (unsigned i = 0; i < MAC_SIZE; i++)
 	{
 		m_sendData[ETH_DST_MAC_P + i] = m_tcpData[ETH_SRC_MAC_P + i];
 		m_sendData[ETH_SRC_MAC_P + i] = m_macAddr[i];
 		m_sendData[ETH_ARP_DST_MAC_P + i] = m_tcpData[ETH_ARP_SRC_MAC_P + i];
-        m_sendData[ETH_ARP_SRC_MAC_P + i] = m_macAddr[i];
+        	m_sendData[ETH_ARP_SRC_MAC_P + i] = m_macAddr[i];
 	}
 	m_sendData[ETH_ARP_OPCODE_H_P] = ETH_ARP_OPCODE_REPLY_H_V;
 	m_sendData[ETH_ARP_OPCODE_L_P] = ETH_ARP_OPCODE_REPLY_L_V;
@@ -521,7 +527,7 @@ void TcpStack::returnPush(void)
 	if (DEBUG) Serial.println();
 }
 
-void TcpStack::returnHttp(uchar* _buf, uint _size)
+void TcpStack::returnHttp(void) //(uchar* _buf, uint _size)
 {
 	if (DEBUG) Serial.println(F("Printing to HTTP!"));
 
@@ -530,14 +536,6 @@ void TcpStack::returnHttp(uchar* _buf, uint _size)
 	// not this time!
 	// Clearing send buffer
 	for (unsigned i = 0; i < DATA_SIZE; i++) m_sendData[i] = 0;
-
-	// Loading data
-	for (unsigned i = 0; i < _size; i++)
-	{
-		m_sendData[ETH_HEADER_LEN_V
-		           + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V
-		           + i] = _buf[i];
-	}
 
 	//if (DEBUG) Serial.print(F("Client's MAC: 0x"));
 
@@ -561,10 +559,11 @@ void TcpStack::returnHttp(uchar* _buf, uint _size)
 	// Header len
 	m_sendData[IP_P] = 0x45;
 	// Total len
-	// TODO: It's conceptually wrong! Bad code!
-	m_sendData[IP_TOTLEN_H_P] = 0;
-	m_sendData[IP_TOTLEN_L_P] = IP_HEADER_LEN_V
-							  + TCP_HEADER_LEN_PLAIN_V + _size;
+	// Done by Renato Aloi (May 2015)
+	// REV 3.1 - OK now that is a real problem
+	// 
+	m_sendData[IP_TOTLEN_H_P] = high(IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V + m_sizePayload);
+	m_sendData[IP_TOTLEN_L_P] = low(IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V + m_sizePayload);
 
 	m_packetId++;
 	m_sendData[IP_ID_H_P] = (m_packetId>>8)&0xFF;
@@ -579,23 +578,22 @@ void TcpStack::returnHttp(uchar* _buf, uint _size)
 	for(unsigned i = 0; i < IP_SIZE; i++)
 	{
 		//if (DEBUG) { Serial.print(m_clientIpAddr[i], HEX); Serial.print(F(" 0x"));}
-
 		m_sendData[IP_DST_P + i] = m_clientIpAddr[i];
 		m_sendData[IP_SRC_P + i] = m_ipAddr[i];
 	}
 	//if (DEBUG) Serial.println();
 
 	m_sendData[IP_CHECKSUM_P] = 0;
-    m_sendData[IP_CHECKSUM_P+1] = 0;
-    m_sendData[IP_FLAGS_P] = 0x40; // don't fragment
-    m_sendData[IP_FLAGS_P + 1] = 0;  // fragement offset
-    m_sendData[IP_TTL_P] = 64; // ttl
+	m_sendData[IP_CHECKSUM_P+1] = 0;
+	m_sendData[IP_FLAGS_P] = 0x40; // don't fragment
+    	m_sendData[IP_FLAGS_P + 1] = 0;  // fragement offset
+    	m_sendData[IP_TTL_P] = 64; // ttl
 	m_sendData[IP_TTL_P+1] = 6; // TODO: damn bug!
 
-    // calculate the checksum:
-    uint ck = checksum(&m_sendData[IP_P], IP_HEADER_LEN_V, 0);
-    m_sendData[IP_CHECKSUM_P] = ck >> 8;
-    m_sendData[IP_CHECKSUM_P+1] = ck & 0xff;
+    	// calculate the checksum:
+    	uint ck = checksum(&m_sendData[IP_P], IP_HEADER_LEN_V, 0);
+    	m_sendData[IP_CHECKSUM_P] = ck >> 8;
+    	m_sendData[IP_CHECKSUM_P+1] = ck & 0xff;
 
 	m_sendData[TCP_FLAGS_P] = TCP_FLAGS_ACK_V;
 
@@ -627,26 +625,79 @@ void TcpStack::returnHttp(uchar* _buf, uint _size)
 	m_sendData[TCP_WINDOW_H_P] = 0x72;
 	m_sendData[TCP_WINDOW_L_P] = 0x10;
 
-	ck = checksum(&m_sendData[IP_SRC_P], 8 + TCP_HEADER_LEN_PLAIN_V + _size, 2);
+	// Filling data before checksum!
+	DMACopy(TX, TXSTART_INIT + ETH_HEADER_LEN_V + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V + 1, m_sizePayload);
+	waitForDMACopy();
+	//
+
+	ck = checksumDMA(8 + TCP_HEADER_LEN_PLAIN_V + m_sizePayload);
 	m_sendData[TCP_CHECKSUM_H_P] = ((ck>>8)&0xFF);
 	m_sendData[TCP_CHECKSUM_L_P] = ((ck)&0xFF);
 
-
-
-	/*if (DEBUG) Serial.print(F("m_tcpData: 0x"));
+	/*if (DEBUG) Serial.println();
+	if (DEBUG) Serial.print(F("m_sendData: 0x"));
 	if (DEBUG) { for (unsigned i = 0; i < DATA_SIZE; i++)
 		{ Serial.print(m_sendData[i], HEX); Serial.print(F(" 0x")); } }
 	if (DEBUG) Serial.println();*/
 
 	// Filling TX Buffer
-	MACWriteTXBuffer(m_sendData, ETH_HEADER_LEN_V
-		           + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V + _size);
+	MACWriteTXBuffer(m_sendData, ETH_HEADER_LEN_V + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V); // + m_sizePayload);
+
+	MACWriteTXEndPt(ETH_HEADER_LEN_V + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V + m_sizePayload);
 
 	// Updating last sent len
 	// We must keep up with SEQ/ACK
-	m_sendPayload = _size;
+	m_sendPayload = m_sizePayload;
 
+	MACSendTx();
 	if (DEBUG) Serial.println();
+}
+
+unsigned int TcpStack::checksumDMA(unsigned int payload)
+{
+	// TODO: Test hardware checksum for future implementation!
+	//m_sendData[IP_SRC_P]
+	unsigned int len = payload;
+	unsigned long sum = 0;
+	unsigned char buf[] = {0, 0};
+	unsigned char *p = &m_sendData[IP_SRC_P];
+
+	sum += IP_PROTO_TCP_V;
+	sum += len - 8;
+
+	SOCKETSetTxPointer(SOCKET_TX_START(0));
+	m_rxPointer = SOCKETGetTxPointer();
+        while(len > 1)
+	{
+		if ((payload - len) < (DATA_SIZE - IP_SRC_P) - 5) 
+		{ 
+			sum += 0xFFFF & (((*p) << 8) | *(p + 1)); 
+			p += 2; 
+			//if (DEBUG) { Serial.print(*p); Serial.print(F(",")); Serial.print(*(p+1)); Serial.print(F(",")); }
+		}
+		else 
+		{ 
+			SOCKETReadBuffer(buf, 2, m_rxPointer);
+			m_rxPointer += 2;
+	
+			sum += 0xFFFF & (buf[0] << 8 | buf[1]); 
+
+			//if (DEBUG) { Serial.print((char)buf[0]); Serial.print(F(",")); Serial.print((char)buf[1]); Serial.print(F(",")); }
+			
+		}
+                len -= 2;
+        }
+
+        if (len) {
+		SOCKETReadBuffer(buf, 2, m_rxPointer);
+		sum += (0xFF & buf[0]) << 8;
+		//if (DEBUG) { Serial.println((char)buf[0]);  }
+	}
+
+
+
+        while (sum >> 16) sum = (sum & 0xFFFF) + (sum >> 16);
+        return( (unsigned int) sum ^ 0xFFFF);
 }
 
 void TcpStack::returnClose(void)
@@ -882,19 +933,22 @@ void TcpStack::open(uint serverPort)
 
 	// initialize I/O
 	// ss as output:
-	pinMode(ENC28J60_CONTROL_CS, OUTPUT);
+//--- made by SKA ---
+//	pinMode(ENC28J60_CONTROL_CS, OUTPUT);
 	//CS Passive mode
-	CSPASSIVE;
+/*	CSPASSIVE;
 	pinMode(SPI_MOSI, OUTPUT);
 	pinMode(SPI_SCK, OUTPUT);
 	pinMode(SPI_MISO, INPUT);
 	digitalWrite(SPI_MOSI, LOW);
 	digitalWrite(SPI_SCK, LOW);
-
+*/
 	// initialize SPI interface
 	// master mode and Fosc/2 clock:
-	SPCR = (1<<SPE)|(1<<MSTR);
-	SPSR |= (1<<SPI2X);
+/*	SPCR = (1<<SPE)|(1<<MSTR);
+	SPSR |= (1<<SPI2X);*/
+	SPI.begin();
+//--- made by SKA ---
 
 	if (DEBUGLT) { Serial.println(F("Configuring Ethernet Layer...")); }
 	if (DEBUGLT) { Serial.print(F("IPAddr: ")); Serial.print(m_ipAddr[0], DEC); Serial.print(F(".")); Serial.print(m_ipAddr[1], DEC); }
@@ -918,20 +972,20 @@ void TcpStack::open(uint serverPort)
 	{
 		Serial.print(F("Hardware Rev.: "));
 		Serial.println(MACHardwareRevision());
-		Serial.println(F("Software Rev.: 3"));
+		Serial.println(F("Software Rev.: 3.1"));
 	}
 
 }
 
 char TcpStack::read(void)
 {
-	// Getting data from socket fifo, not RXTX fifo
 	// Local buffer
 	uchar localBuf[1] = { 0 };
 
 	// Getting global rxPointer
 	if (m_rxPointer == 0)
 	{
+		// Getting data from socket fifo, not RXTX fifo
 		SOCKETSetRxPointer(SOCKET_RX_START(0) + 54);
 		m_rxPointer = SOCKETGetRxPointer();
 	}
@@ -939,13 +993,13 @@ char TcpStack::read(void)
 	if (m_established && !m_buffering && !m_closing)
 	{
 		// Reading socket's buffer
-		SOCKETReadBuffer(localBuf, 1, m_rxPointer); //localRxPointer);
+		SOCKETReadBuffer(localBuf, 1, m_rxPointer); 
 		m_rxPointer++;
 	}
 	else return -1;
 
-	//if (DEBUG)  { Serial.print((char)localBuf[0]); Serial.print(", "); }
-	//if (DEBUG)  { Serial.print((char)localBuf[0]); }
+	//if (DEBUG)  { Serial.print((char)localBuf[0]); Serial.print(F(", ")); }
+	if (DEBUG)  { Serial.print((char)localBuf[0]); }
 
 	if (m_recvPayload-- == 0)
 		return -1;
@@ -953,15 +1007,44 @@ char TcpStack::read(void)
 	return (char)localBuf[0];
 }
 
-void TcpStack::send(void)
+void TcpStack::write(char c)
 {
-	// You may asking why ???
-	// For future, TX will be gathered from socket fifo
-	// rather than directly from TX fifo
-	// So.. Must be an aparted send function
-	MACSendTx();
-	//delay(10);
+	// Local buffer
+	uchar localBuf[] = { 0, 0 };
+	localBuf[0] = c;
+
+	if (m_sizePayload < DATA_SIZE_HARDWARE)
+  	{
+		// Only send if sizePayload reaches max
+		m_sizePayload++;
+	}
+	else
+	{
+		// reached max packet size, sending
+		send();
+	}
+
+	// Getting global txPointer
+	if (m_txPointer == 0)
+	{
+		// Writing data to socket fifo, not RXTX fifo
+		SOCKETSetTxPointer(SOCKET_TX_START(0));
+		m_txPointer = SOCKETGetTxPointer();
+	}
+
+	if (m_established && !m_buffering && !m_closing)
+	{
+		// Writing at socket's buffer
+		SOCKETWriteBuffer(localBuf, 2, m_txPointer); 
+		m_txPointer++;
+	}
+
+	//if (DEBUG)  { Serial.print(F("size: ")); Serial.println(m_sizePayload); }
+	//if (DEBUG)  { Serial.print((char)localBuf[0]); }
+
+	
 }
 
-// Remember! write() and close() already done at .h file!
+
+// Remember! send() and close() already done at .h file!
 

@@ -3,9 +3,19 @@
              Prints Html page with buttons for all digital port available on Arduino UNO
   Created by Renato Aloi, August, 2013.
   Released into the public domain.
+  
+  -- May 2015
+  Modified by Renato Aloi according to changes at library level, made by Suchkov (SKA)
+
 */
 
 #include <EtherEncLib.h>
+#include <SPI.h>
+#include <avr/pgmspace.h>
+
+const PROGMEM char resp200Txt[] = {"HTTP/1.0 200 OK\n\rContent-Type: text/html\n\rPragma: no-cache\n\r\n\r"};
+const PROGMEM char respLinkIni[] = {"<br><a href=/?pin="};
+const PROGMEM char respLinkFim[] = {"!</a>"};
 
 unsigned char arduinoUnoPins[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,  14, 15, 16, 17, 18, 19 } ;
                                    /*  Digital ports                         */   /*  Analogic ports   */
@@ -20,12 +30,14 @@ int arduinoUnoAvailableIndex = -1;
 
 EtherEncLib lib(80);
 
-static unsigned char ipaddr[] = { 192, 168, 1, 25 };
+static unsigned char ipaddr[] = { 192, 168, 0, 125 };
 static unsigned char macaddr[] = { 0x54, 0x55, 0x58, 0x10, 0x00, 0x25 };
 
 void setup()
 {
     Serial.begin(115200);
+    
+    pinMode(10,OUTPUT);	//--- ? -- SS pin must be output # by Renato Aloi
     
     //
     // Starting the lib
@@ -83,7 +95,6 @@ void loop()
     {
         //
         // EtherEncLib deals with GET and POST methods
-        // Obs: POST method not yet implemented
         //
         
         // GET parameters
@@ -92,58 +103,76 @@ void loop()
         Serial.print("Params: ");
         Serial.println(params);
         
-        //
-        // Printing HTML header
-        //
-        lib.print("<HTML>");
-        lib.print("<HEAD><TITLE>Arduino EtherEncLib.h</TITLE></HEAD>");
-        lib.print("<BODY>");
+        lib.print((char *)&resp200Txt[0],strlen_P(&resp200Txt[0]));
         
-        //
-        // Printing welcome message
-        //
-        lib.print("<h3>Welcome to EtherEncLib.h library!</h3>");
-        
-        lib.print("<p>");
-        //
-        // Checking parameters
-        //
-        if (strncmp(&params[1], "pin", 3) == 0 )
+        if ( strncmp(lib.getParams(),"favicon.ico",11) == 0 ) 
         {
-            //
-            // Checking for pin value
-            //
-            for (int i = 0; i < arduinoUnoAvailableLength; i++)
-            {
-                configureStateBuffer(params, arduinoUnoAvailablePins[i], arduinoUnoAvailablePins[i] / 10);
-            }
-            
+          // printing favicon
+          // for future version
         }
-        
-        
-        for (int i = 0; i < arduinoUnoAvailableLength; i++)
+        else if (lib.isIndexHtml || lib.isGet)
         {
-            Serial.print(arduinoUnoAvailablePinsState[i], DEC);
-            Serial.print(",");
+        
+          //
+          // Printing HTML header
+          //
+          lib.print("<HTML>");
+          lib.print("<HEAD><TITLE>Arduino EtherEncLib.h</TITLE></HEAD>");
+          lib.print("<BODY>");
+          
+          //
+          // Printing welcome message
+          //
+          lib.print("<h3>Welcome to EtherEncLib.h library!</h3>");
+          lib.print("<p>");
+          //
+          // Checking parameters
+          //
+          if (strncmp(&params[1], "pin", 3) == 0 )
+          {
+              //
+              // Checking for pin value
+              //
+              for (int i = 0; i < arduinoUnoAvailableLength; i++)
+              {
+                  configureStateBuffer(params, arduinoUnoAvailablePins[i], arduinoUnoAvailablePins[i] / 10);
+              }
+              
+          }
+          
+          
+          for (int i = 0; i < arduinoUnoAvailableLength; i++)
+          {
+              Serial.print(arduinoUnoAvailablePinsState[i], DEC);
+              Serial.print(",");
+          }
+          Serial.println();
+          
+          
+          for (int i = 0; i < arduinoUnoAvailableLength; i++)
+          {
+              configurePinAndHtmlDetail(arduinoUnoAvailablePinsState[i], arduinoUnoAvailablePins[i]);
+          }
+          
+          lib.print("</p>");
+          
+          // Printing HTML footer
+          lib.print("</BODY>");
+          lib.print("</HTML>");
+          
+          //
+          // Closing connection
+          // Put the EtherEncLib in listen state again
+          //
         }
-        Serial.println();
-        
-        
-        for (int i = 0; i < arduinoUnoAvailableLength; i++)
+        else if (lib.isPost)
         {
-            configurePinAndHtmlDetail(arduinoUnoAvailablePinsState[i], arduinoUnoAvailablePins[i]);
+          // deal with post
         }
-        
-        lib.print("</p>");
-        
-        // Printing HTML footer
-        lib.print("</BODY>");
-        lib.print("</HTML>");
-        
-        //
-        // Closing connection
-        // Put the EtherEncLib in listen state again
-        //
+        else
+        {
+          // for debug
+        }
         lib.close();
     }
 }
@@ -211,20 +240,20 @@ void configurePinAndHtmlDetail(unsigned char state, int i)
     if (state)
     {
         digitalWrite(i, HIGH);
-        lib.print("<br><a href=/?pin=");
+        lib.print((char *)&respLinkIni[0],strlen_P(&respLinkIni[0]));
         lib.print(i);
         lib.print("&state=L>Deactivate Pin ");
         lib.print(i);
-        lib.print("!</a>");
+        lib.print((char *)&respLinkFim[0],strlen_P(&respLinkFim[0]));
     }
     else
     {
         digitalWrite(i, LOW);
-        lib.print("<br><a href=/?pin=");
+        lib.print((char *)&respLinkIni[0],strlen_P(&respLinkIni[0]));
         lib.print(i);
         lib.print("&state=H>Activate Pin ");
         lib.print(i);
-        lib.print("!</a>");
+        lib.print((char *)&respLinkFim[0],strlen_P(&respLinkFim[0]));
     }
 }
 

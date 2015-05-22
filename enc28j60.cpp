@@ -13,7 +13,7 @@ static WORD_VAL         NextPacketLocation;
 static WORD_VAL         CurrentPacketLocation;
 static unsigned char    Enc28j60Bank;
 static unsigned char    *m_macadd;//[6];
-static unsigned char    *m_ipadd;//[4];
+//--- made by SKA ---static unsigned char    *m_ipadd;//[4];
 
 
 /******************************************************************************
@@ -199,7 +199,7 @@ void MACEnableRecv(void)
 {
     // 5.
     
-    // enable interrutps
+    // enable interrupts
     //enc28j60WriteOp(ENC28J60_BIT_FIELD_SET, EIE, EIE_INTIE|EIE_PKTIE);
     // enable packet reception
     enc28j60WriteOp(ENC28J60_BIT_FIELD_SET, ECON1, ECON1_RXEN);
@@ -493,6 +493,16 @@ void MACWriteTXBufferOffset2(uint8_t* _buf, uint16_t _size, uint16_t offset_len,
     enc28j60WriteBuffer(_size, _buf);
 }
 
+void MACWriteTXEndPt( unsigned int _size)
+{
+    // calc end offset
+    unsigned int offsetEnd    = TXSTART_INIT + _size; 
+    
+    // Set the TXND pointer to correspond to the packet size given
+    enc28j60Write(ETXNDL, low(offsetEnd));
+    enc28j60Write(ETXNDH, high(offsetEnd));
+}
+
 /******************************************************************************
  * Function:        void MACSendTx(void)
  *
@@ -535,7 +545,8 @@ void MACSendTx(void)
  *
  * Note:            None
  *****************************************************************************/
-BOOL IsMACSendTx(void)
+//--- made by SKA ---BOOL IsMACSendTx(void)
+bool IsMACSendTx(void)
 {
     return !((enc28j60Read(ECON1) & ECON1_TXRTS) == ECON1_TXRTS);
 }
@@ -709,7 +720,7 @@ void SOCKETSetTxPointer(unsigned int addr)
  *****************************************************************************/
 
 /******************************************************************************
- * Function:        void MACMemCopyAsync(FLOW flow, unsigned int destAddr, unsigned int len)
+ * Function:        void DMACopy(FLOW flow, unsigned int destAddr, unsigned int len)
  *
  * PreCondition:    SPI bus must be initialized (done in MACInit()).
  *
@@ -736,9 +747,22 @@ void SOCKETSetTxPointer(unsigned int addr)
  *                  parameters, then that pointer will get updated with the
  *                  next address after the read or write.
  *****************************************************************************/
-void DMACopyTo(FLOW flow, unsigned int destAddr, unsigned int len)
+void DMACopy(FLOW flow, unsigned int destAddr, unsigned int len)
 {
-    unsigned int sourceAddr = RXSTART_INIT;
+    // finally using tx socket space, after 2 years developing this enc28's EEPROM approach
+    // for documentation sake, I have made following organization
+    // to enc28's 8k eeprom
+    // 0H ~ 800H (2K) - RX FIFO (CYCLIC)
+    // 802H ~ 1000H (2K-1byte) - TX FIFO (FLAT)
+    // 1002H ~ 1401H - Socket RX Bank 0 (FLAT)
+    // 1402H ~ 1801H - Socket RX Bank 1 (not used yet) (FLAT)
+    // 1803H ~ 1C02H - Socket TX Bank 0 (FLAT)
+    // 1C03H ~ 1FFEH - Socket TX Bank 1 (not used yet) (FLAT) -- Total 8K EEPROM used ONLY by this library!
+    // Errata 7b has lots of issues about this addresses
+    // I have made them by the book!
+    // By Renato Aloi (May 2015)
+    // While trying to remmember all rules to implement last and most important option: Write at TX Socket Buffer!
+    unsigned int sourceAddr = RXSTART_INIT; // RX Copy From FIFO To Bank
     
     enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, ECON1, ECON1_CSUMEN);
     enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, ECON1, ECON1_DMAST);
@@ -758,7 +782,7 @@ void DMACopyTo(FLOW flow, unsigned int destAddr, unsigned int len)
     }
     else if (flow == TX)
     {
-	sourceAddr = TXSTART_INIT;
+	sourceAddr = SOCKET_TX_START(0); // TX Copy From Bank To FIFO
     }
     
     // Source Init Address
@@ -797,84 +821,6 @@ void DMACopyTo(FLOW flow, unsigned int destAddr, unsigned int len)
     enc28j60WriteOp(ENC28J60_BIT_FIELD_SET, ECON1, ECON1_DMAST);
 }
 
-/******************************************************************************
- * Function:        void MACMemCopyAsync(FLOW flow, unsigned int destAddr, unsigned int len)
- *
- * PreCondition:    SPI bus must be initialized (done in MACInit()).
- *
- * Input:           destAddr:   Destination address in the Ethernet memory to
- *                              copy to.  If (PTR_BASE)-1 is specified, the 
- *								current EWRPT value will be used instead.
- *                  sourceAddr: Source address to read from.  If (PTR_BASE)-1 is
- *                              specified, the current ERDPT value will be used
- *                              instead.
- *                  len:        Number of bytes to copy
- *
- * Output:          None
- *
- * Side Effects:    Moves read and write pointers. DMA conflict with transmitting and receiving
- *
- * Overview:        Bytes are asynchrnously transfered within the buffer.  Call
- *                  MACIsMemCopyDone() to see when the transfer is complete.
- *
- * Note:            If a prior transfer is already in progress prior to
- *                  calling this function, this function will block until it
- *                  can start this transfer.
- *
- *                  If (PTR_BASE)-1 is used for the sourceAddr or destAddr
- *                  parameters, then that pointer will get updated with the
- *                  next address after the read or write.
- *****************************************************************************/
-void DMACopyFrom(FLOW flow, unsigned int sourceAddr, unsigned int len)
-{
-    unsigned int destAddr = TXSTART_INIT;
-    
-    enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, ECON1, ECON1_CSUMEN);
-    enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, ECON1, ECON1_DMAST);
-    
-    // Defining source address by read or write pointer
-    if (flow == RX)
-    {
-	destAddr = NextPacketLocation.Val;
-    }
-    else if (flow == TX)
-    {
-	destAddr = TXSTART_INIT + 1;
-        
-        // write per-packet control byte (0x00 means use macon3 settings)
-        enc28j60WriteOp(ENC28J60_WRITE_BUF_MEM, 0, 0x00);
-    }
-    
-    // Source Init Address
-    enc28j60Write(EDMASTL, low(sourceAddr));
-    enc28j60Write(EDMASTH, high(sourceAddr));
-    
-    // Source Stop Address
-    enc28j60Write(EDMANDL, low((sourceAddr + len))); // + RXD_STATUS_VECTOR_SIZE));
-    enc28j60Write(EDMANDH, high((sourceAddr + len))); // + RXD_STATUS_VECTOR_SIZE));
-    
-    // Destination Init Address
-    enc28j60Write(EDMADSTL, low(destAddr));
-    enc28j60Write(EDMADSTH, high(destAddr));
-    
-    // Clear flag
-    enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, EIR, EIR_DMAIF);
-    
-    // Execute!
-    enc28j60WriteOp(ENC28J60_BIT_FIELD_SET, ECON1, ECON1_DMAST);
-    
-    if (flow == TX)
-    {
-        // Set the write pointer to start of transmit buffer area
-        enc28j60Write(EWRPTL, low((destAddr - 1)));
-        enc28j60Write(EWRPTH, high((destAddr - 1)));
-        
-        // Set the TXND pointer to correspond to the packet size given
-        enc28j60Write(ETXNDL, low(((destAddr - 1) + len)));
-        enc28j60Write(ETXNDH, high(((destAddr - 1) + len)));
-    }
-    
-}
 
 /******************************************************************************
  * Function:        BOOL IsDMACopyDone(void)
@@ -891,7 +837,8 @@ void DMACopyFrom(FLOW flow, unsigned int sourceAddr, unsigned int len)
  *
  * Note:            None
  *****************************************************************************/
-BOOL IsDMACopyDone(void)
+//--- made by SKA ---BOOL IsDMACopyDone(void)
+bool IsDMACopyDone(void)
 {
     return !((enc28j60Read(ECON1) & ECON1_DMAST) == ECON1_DMAST);
 }
@@ -953,11 +900,13 @@ static void enc28j60WriteOp(uint8_t op, uint8_t address, uint8_t data)
 {
         CSACTIVE;
         // issue write command
-        SPDR = op | (address & ADDR_MASK);
-        waitspi();
+/*--- made by SKA ---        SPDR = op | (address & ADDR_MASK);
+        waitspi();*/
+	SPI.transfer(op | (address & ADDR_MASK));
         // write data
-        SPDR = data;
-        waitspi();
+/*--- made by SKA ---        SPDR = data;
+        waitspi();*/
+	SPI.transfer(data);
         CSPASSIVE;
 }
 
@@ -1003,14 +952,16 @@ static void enc28j60WriteBuffer(uint16_t len, uint8_t* data)
 {
     CSACTIVE;
     // issue write command
-    SPDR = ENC28J60_WRITE_BUF_MEM;
-    waitspi();
+/*--- made by SKA ---    SPDR = ENC28J60_WRITE_BUF_MEM;
+    waitspi();*/
+    SPI.transfer(ENC28J60_WRITE_BUF_MEM);
     while(len)
     {
         len--;
         // read data
-        SPDR = *data;
-        waitspi();
+/*--- made by SKA ---        SPDR = *data;
+        waitspi();*/
+	SPI.transfer((byte)* data);
         if (len) data++;
     }
     // release CS
@@ -1018,7 +969,7 @@ static void enc28j60WriteBuffer(uint16_t len, uint8_t* data)
 }
 
 /******************************************************************************
- * Function:        static uint8_t enc28j60Read(uint8_t address)
+ * Function:        static uint8_t enc28j60ReadOp(uint8_t address)
  *
  * PreCondition:    None
  *
@@ -1036,16 +987,19 @@ static uint8_t enc28j60ReadOp(uint8_t op, uint8_t address)
 {
         CSACTIVE;
         // issue read command
-        SPDR = op | (address & ADDR_MASK);
-        waitspi();
+/*--- made by SKA ---        SPDR = op | (address & ADDR_MASK);
+        waitspi();*/
+	SPI.transfer(op | (address & ADDR_MASK));
         // read data
-        SPDR = 0x00;
-        waitspi();
+/*--- made by SKA ---        SPDR = 0x00;
+        waitspi();*/
+	SPI.transfer(0x00);
         // do dummy read if needed (for mac and mii, see datasheet page 29)
         if(address & 0x80)
         {
-            SPDR = 0x00;
-            waitspi();
+/*--- made by SKA ---            SPDR = 0x00;
+            waitspi();*/
+	    SPI.transfer(0x00);
         }
         // release CS
         CSPASSIVE;
@@ -1094,15 +1048,17 @@ static void enc28j60ReadBuffer(uint16_t len, uint8_t* data)
 {
         CSACTIVE;
         // issue read command
-        SPDR = ENC28J60_READ_BUF_MEM;
-        waitspi();
+/*--- made by SKA ---        SPDR = ENC28J60_READ_BUF_MEM;
+        waitspi();*/
+	SPI.transfer(ENC28J60_READ_BUF_MEM);
         while(len)
         {
                 len--;
                 // read data
-                SPDR = 0x00;
+/*--- made by SKA ---                SPDR = 0x00;
                 waitspi();
-                *data = SPDR;
+                *data = SPDR;*/
+                *data = SPI.transfer(0x00);
                 data++;
         }
         //*data='\0';
