@@ -20,5 +20,7 @@ Not yet merged at 'master' branch. Check all about new REV 3.1 through 'enc28cor
 Thanks all for contribuing, special thanks to SKA for his POST treatment and SPI workout!
 
 by Renato Aloi
+
 May 2015
-seriallink.com.br
+
+[seriallink.com.br](http://www.seriallink.com.br)
