@@ -16,7 +16,7 @@ EtherEncLib
 
 **Important!** Not yet merged at 'master' branch. Check all about new REV 3.1 through 'enc28coremerge' branch, following this link:
 
-(https://github.com/renatoaloi/EtherEncLib/tree/enc28coremerge)
+[github.com/renatoaloi/EtherEncLib/tree/enc28coremerge](https://github.com/renatoaloi/EtherEncLib/tree/enc28coremerge)
 
 Thanks all for contribuing, special thanks to SKA for his POST treatment and SPI workout!
 
