@@ -11,9 +11,10 @@ EtherEncLib
 
 - [Schematics](https://github.com/renatoaloi/EtherEncLib/wiki/Schematics)
 - [Changelog](https://github.com/renatoaloi/EtherEncLib/wiki/Revisions)
-- [Story & Memory Organization](https://github.com/renatoaloi/EtherEncLib/wiki)
+- [Story](https://github.com/renatoaloi/EtherEncLib/wiki)
+- [Memory Organization](https://github.com/renatoaloi/EtherEncLib/wiki#enc28j60-memory-usage)
 
-Not yet merged at 'master' branch. Check all about new REV 3.1 through 'enc28coremerge' branch, following this link:
+**Important!** Not yet merged at 'master' branch. Check all about new REV 3.1 through 'enc28coremerge' branch, following this link:
 
 (https://github.com/renatoaloi/EtherEncLib/tree/enc28coremerge)
 
