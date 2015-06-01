@@ -54,7 +54,8 @@ uint16_t checksum(uint8_t *buf, uint16_t len, uint8_t type)
         }
         // if there is a byte left then add it (padded with zero)
         if (len){
-                sum += (0xFF & *buf)<<8;
+//--- made by SKA ---                sum += (0xFF & *buf)<<8;
+                sum += 0xFFFF & (*buf<<8|0x00);
         }
         // now calculate the sum over the bytes in the sum
         // until the result is only 16bit long
