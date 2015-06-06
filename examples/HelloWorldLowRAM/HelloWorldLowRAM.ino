@@ -15,6 +15,10 @@
 #include <avr/pgmspace.h>
 
 const PROGMEM char resp200Txt[] = {"HTTP/1.0 200 OK\n\rContent-Type: text/html\n\rPragma: no-cache\n\r\n\r"};
+const PROGMEM char respHtml_0[] = {"<HTML><HEAD><TITLE>Arduino EtherEncLib.h</TITLE></HEAD><BODY>"};
+const PROGMEM char respHtml_1[] = {"<h3>Welcome to EtherEncLib.h library!</h3>"};
+const PROGMEM char respHtml_2[] = {"</BODY></HTML>"};
+const PROGMEM char respHtml_N[] = {"Fixed text/html must be here for RAM sake!"};
 
 EtherEncLib lib(80);
 
@@ -40,34 +44,29 @@ void loop()
     //
     // Check if request has arrived
     //
-    if (lib.available())
+    if (lib.available() )
     {
-        char *params = lib.getParams();
-        
-        Serial.print(F("Params: "));
-        Serial.println(params);
-        
-	//
-	// Printing HTTP 200 OK
+	// 
+	// Print HTTP 200 OK
 	//
 	lib.print((char *)&resp200Txt[0],strlen_P(&resp200Txt[0]));
 
 	//
 	// Printing HTML header
 	//
-	lib.print("<HTML>");
-	lib.print("<HEAD><TITLE>Arduino EtherEncLib.h</TITLE></HEAD>");
-	lib.print("<BODY>");
-	
+	lib.print((char *)&respHtml_0[0],strlen_P(&respHtml_0[0]));
+		
 	//
 	// Printing welcome message
+	// KEEP IT @ FLASH via PROGMEM (by Renato Aloi) May 2015
 	//
-	lib.print("<h3>Welcome to EtherEncLib.h library!</h3>");
+	lib.print((char *)&respHtml_1[0],strlen_P(&respHtml_1[0]));
 	
+	//	
 	// Printing HTML footer
-	lib.print("</BODY>");
-	lib.print("</HTML>");
-	
+	//
+	lib.print((char *)&respHtml_2[0],strlen_P(&respHtml_2[0]));
+		
 	//
 	// Closing connection
 	// Put the EtherEncLib in listen state again

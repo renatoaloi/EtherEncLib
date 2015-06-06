@@ -1,44 +1,83 @@
-/*****************************************************************************
-* vim:sw=8:ts=8:si:et
-*
-* Title         : Microchip ENC28J60 Ethernet Interface Driver
-* Author        : Pascal Stang (c)2005
-* Modified by Guido Socher
-* Modified again by Renato Aloi - 2013 August
-* Copyright: GPL V2
-*
-* This driver provides initialization and transmit/receive
-* functions for the Microchip ENC28J60 10Mb Ethernet Controller and PHY.
-* This chip is novel in that it is a full MAC+PHY interface all in a 28-pin
-* chip, using an SPI interface to the host processor.
-*
-*
-*****************************************************************************/
-/*********************************************
- * Modified: nuelectronics.com -- Ethershield for Arduino
- *********************************************/
-//@{
+#include "enc28typedef.h"
+#include <stdint.h>
+#include <avr/io.h>
+
+//--- made by SKA ---
+#include <SPI.h>
+
+#define low(a)          (a&0xFF)
+#define high(a)         ((a>>8)&0xFF)
+
+//typedef enum _BOOL { FALSE = 0, TRUE } BOOL;
+typedef enum _FLOW { RX = 0, TX } FLOW;
+
+typedef union
+{
+    unsigned int Val;
+    struct
+    {
+        unsigned char LB;
+        unsigned char HB;
+    } Byte;
+    struct
+    {
+         unsigned char b0:1;
+         unsigned char b1:1;
+         unsigned char b2:1;
+         unsigned char b3:1;
+         unsigned char b4:1;
+         unsigned char b5:1;
+         unsigned char b6:1;
+         unsigned char b7:1;
+         unsigned char b8:1;
+         unsigned char b9:1;
+         unsigned char b10:1;
+         unsigned char b11:1;
+         unsigned char b12:1;
+         unsigned char b13:1;
+         unsigned char b14:1;
+         unsigned char b15:1;
+    } Bits;
+} WORD_VAL, WORD_BITS;
 
 
-#ifndef ENC28J60_H
-#define ENC28J60_H
+/******************************************************************************
+ * APPLICATION LAYER METHOD DECLARATIONS
+ *****************************************************************************/
+void 		MACInit(void);
+void 		MACOpen(void);
+void 		MACEnableRecv(void);
+void 		MACInitMacAddr(unsigned char *_macadd);
+unsigned char *MACGetMacAddr(void);
+unsigned char 	MACHardwareRevision(void);
+void 		MACSendSystemReset(void);
 
-#include <inttypes.h>
-#include "enctypes.h"
+unsigned char 	MACGetPacketCount(void);
+void 		MACReadRXBuffer(unsigned char* _buf, unsigned int _size);
+void 		MACDiscardRx(void);
+void 		MACWriteTXBuffer(unsigned char* _buf, unsigned int _size);
+void 		MACWriteTXBufferOffset(unsigned char* _buf, unsigned int _size, unsigned int offset_len);
+void        	MACWriteTXBufferOffset2(uint8_t* _buf, uint16_t _size, uint16_t offset_len, uint16_t offset_val);
+void 		MACWriteTXEndPt(unsigned int _size);
+void 		MACSendTx(void);
+//--- made by SKA ---
+bool 		IsMACSendTx(void);
+
+/******************************************************************************
+ * SOCKET APPLICATION LAYER METHOD DECLARATIONS
+ *****************************************************************************/
+void 		SOCKETReadBuffer(unsigned char* _buf, unsigned int _size, unsigned int _start);
+void 		SOCKETWriteBuffer(unsigned char* _buf, unsigned int _size, unsigned int _start);
+unsigned int 	SOCKETGetRxPointer();
+void 		SOCKETSetRxPointer(unsigned int addr);
+unsigned int 	SOCKETGetTxPointer();
+void 		SOCKETSetTxPointer(unsigned int addr);
 
 
+/******************************************************************************
+ * DMA COPY LAYER METHOD DECLARATIONS
+ *****************************************************************************/
+void DMACopy(FLOW flow, unsigned int destAddr, unsigned int len);
+//--- made by SKA ---
+bool IsDMACopyDone(void);
 
-// functions
-extern uint8_t  enc28j60ReadOp        (uint8_t  op,      uint8_t address                  );
-extern void     enc28j60WriteOp       (uint8_t  op,      uint8_t address,     uint8_t data);
-extern void     enc28j60ReadBuffer    (uint16_t len,     uint8_t* data                    );
-extern void     enc28j60WriteBuffer   (uint16_t len,     uint8_t* data                    );
-extern void     enc28j60SetBank       (uint8_t  address                                   );
-extern uint8_t  enc28j60Read          (uint8_t  address                                   );
-extern void     enc28j60Write         (uint8_t  address, uint8_t data                     );
-extern void     enc28j60PhyWrite      (uint8_t  address, uint16_t data                    );
-extern void     enc28j60clkout        (uint8_t  clk                                       );
-extern uint8_t  enc28j60getrev        (void                                               );
-
-#endif
-//@}

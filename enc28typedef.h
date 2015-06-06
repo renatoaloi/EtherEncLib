@@ -6,10 +6,115 @@
 // - MAC/PHY indicator       (bit 7)
 
 // * Modified again by Renato Aloi - 2013 August
+// * Re-Modified again by Renato Aloi - 2014 November (REV3)
 
 #ifndef ENCTYPES_H
 #define ENCTYPES_H
 
+#define ETH_BUFF_SIZE            14
+
+// ****************************************************************************
+// ******* ETH VALUES *******
+#define ETHTYPE_ARP_H_V          0x08
+#define ETHTYPE_ARP_L_V          0x06
+#define ETHTYPE_IP_H_V           0x08
+#define ETHTYPE_IP_L_V           0x00
+#define ETH_HEADER_LEN_V         0x0E
+
+// ******* ETH POSITIONS *******
+// Ethernet type field (2bytes):
+#define ETH_TYPE_H_P             0x0C
+#define ETH_TYPE_L_P             0x0D
+#define ETH_DST_MAC_P            0x00
+#define ETH_SRC_MAC_P            0x06
+
+// ****************************************************************************
+// ******* ICMP VALUES *******
+#define ICMP_TYPE_ECHOREQUEST_V  0x08
+#define ICMP_TYPE_ECHOREPLY_V    0x00
+
+// ******* ICMP POSITIONS *******
+#define ICMP_TYPE_P              0x22
+#define ICMP_CHECKSUM_P          0x24
+
+// ****************************************************************************
+// ******* ARP VALUES *******
+#define ETH_ARP_OPCODE_REPLY_H_V 0x00
+#define ETH_ARP_OPCODE_REPLY_L_V 0x02
+
+// ******* ARP POSITIONS *******
+#define ETH_ARP_DST_IP_P         0x26
+#define ETH_ARP_OPCODE_H_P       0x14
+#define ETH_ARP_OPCODE_L_P       0x15
+#define ETH_ARP_SRC_MAC_P        0x16
+#define ETH_ARP_SRC_IP_P         0x1C
+#define ETH_ARP_DST_MAC_P        0x20
+#define ETH_ARP_DST_IP_P         0x26
+
+// ****************************************************************************
+// ******* IP VALUES *******
+#define IP_PROTO_ICMP_V		 0x01
+#define IP_PROTO_TCP_V		 0x06
+#define IP_PROTO_UDP_V		 0x11
+#define IP_V4_V			 0x40
+#define IP_HEADER_LEN_VER_V      0x45
+#define IP_HEADER_LEN_V		 0x14
+
+// ******* IP POSITIONS *******
+#define IP_P		         0x0E
+#define IP_TOTLEN_H_P		 0x10
+#define IP_TOTLEN_L_P		 0x11
+#define IP_ID_H_P			 0x12
+#define IP_ID_L_P			 0x13
+#define IP_SRC_P                 0x1A
+#define IP_DST_P                 0x1E
+#define IP_FLAGS_P               0x14
+#define IP_FLAGS_H_P		 0x14
+#define IP_FLAGS_L_P		 0x15
+#define IP_TTL_P                 0x16
+#define IP_PROTO_P		 0x17
+#define IP_CHECKSUM_P            0x18
+#define IP_HEADER_LEN_VER_P      0x0E
+
+// ****************************************************************************
+// Initial Seq Num C0C756EF
+// ******* TCP VALUES *******
+#define TCP_OPT_LEN_V            0x04
+#define TCP_FLAGS_FIN_V		 0x01 //
+#define TCP_FLAGS_SYN_V		 0x02 //
+#define TCP_FLAGS_RST_V          0x04 //
+#define TCP_FLAGS_RSTACK_V       0x14 //
+#define TCP_FLAGS_PUSH_V         0x08 //
+#define TCP_FLAGS_ACK_V		 0x10 //
+#define TCP_FLAGS_FINACK_V	 0x11 //
+#define TCP_FLAGS_SYNACK_V 	 0x12 //
+#define TCP_FLAGS_PSHACK_V       0x18 //
+#define TCP_SEQ_NUM_INI_HH_V     0xC0
+#define TCP_SEQ_NUM_INI_HL_V     0xC7
+#define TCP_SEQ_NUM_INI_LH_V     0x56
+#define TCP_SEQ_NUM_INI_LL_V     0xEF
+#define TCP_HEADER_LEN_PLAIN_V   0x14
+
+// ******* TCP POSITIONS *******
+#define TCP_SEQ_P                0x26 // the tcp seq number is 4 bytes 0x26-0x29
+#define TCP_ACK_P                0x2A // the tcp ack number is 4 bytes 0x2A-0x2D
+#define TCP_SRC_PORT_H_P         0x22
+#define TCP_SRC_PORT_L_P         0x23
+#define TCP_DST_PORT_H_P         0x24
+#define TCP_DST_PORT_L_P         0x25
+#define TCP_FLAGS_P              0x2F
+#define TCP_HEADER_LEN_P         0x2E
+#define TCP_WINDOW_H_P 	 0x30
+#define TCP_WINDOW_L_P 	 0x31
+#define TCP_CHECKSUM_H_P 	 0x32
+#define TCP_CHECKSUM_L_P 	 0x33
+#define TCP_OPTIONS_P 		 0x36
+#define TCP_DATA_P	         0x36 
+
+// ****************************************************************************
+
+#define RXD_STATUS_VECTOR_SIZE  6
+#define TXD_STATUS_VECTOR_SIZE  7
 
 #define ADDR_MASK        0x1F
 #define BANK_MASK        0x60
@@ -186,6 +291,11 @@
 #define MACON3_HFRMLEN   0x04
 #define MACON3_FRMLNEN   0x02
 #define MACON3_FULDPX    0x01
+// MACON4 bits --------
+#define	MACON4_DEFER	(1<<6)
+#define	MACON4_BPEN		(1<<5)
+#define	MACON4_NOBKOFF	(1<<4)
+
 // ENC28J60 MICMD Register Bit Definitions
 #define MICMD_MIISCAN    0x02
 #define MICMD_MIIRD      0x01
@@ -230,29 +340,58 @@
 // the entire available packet buffer space is allocated
 //
 // start with recbuf at 0/
-#define RXSTART_INIT     0x0
+#define RXSTART_INIT        0x0
 // receive buffer end
-#define RXSTOP_INIT      (0x1FFF-0x0600-1)
-// start TX buffer at 0x1FFF-0x0600, pace for one full ethernet frame (~1500 bytes)
-#define TXSTART_INIT     (0x1FFF-0x0600)
+#define RXSTOP_INIT         0x800       //0x7FF   //(0x1FFF-0x0600-1)
+// start TX buffer at 0x1FFF-0x0600,
+// space for one full ethernet frame (~1500 bytes)
+#define TXSTART_INIT        0x802   //(0x1FFF-0x0600)
 // stp TX buffer at end of mem
-#define TXSTOP_INIT      0x1FFF
+#define TXSTOP_INIT         0x1000  //0x1FFF
+
+#define RXSIZE (RXSTOP_INIT - RXSTART_INIT + 1)
+
+
+// start TX socket 1 buffer
+#define SOCKET1_TX_START     0x1803
+// TX socket buffer 1 end
+#define SOCKET1_TX_END       0x1C02
+// start TX socket 2 buffer
+#define SOCKET2_TX_START     0x1C03
+// TX socket buffer 2 end
+#define SOCKET2_TX_END       0x1FFE
+
+#define SOCKET_TX_START(a)  ((a != 0) ? ((a != 1) ? 0 : 0x1C03) : 0x1803)
+#define SOCKET_TX_END(a)    ((a != 0) ? ((a != 1) ? 0 : 0x1FFE) : 0x1C02)
+#define SOCKET_TX_LEN(a)    (SOCKET_TX_END(a) - SOCKET_TX_START(a) + 1)
+
+// start RX socket 1 buffer
+#define SOCKET1_RX_START     0x1002
+// RX socket buffer 1 end
+#define SOCKET1_RX_END       0x1401
+// start RX socket 2 buffer
+#define SOCKET2_RX_START     0x1402
+// RX socket buffer 2 end
+#define SOCKET2_RX_END       0x1801
+
+#define SOCKET_RX_START(a)  ((a != 0) ? ((a != 1) ? 0 : 0x1402) : 0x1002)
+#define SOCKET_RX_END(a)    ((a != 0) ? ((a != 1) ? 0 : 0x1801) : 0x1401)
+#define SOCKET_RX_LEN(a)    (SOCKET_RX_END(a) - SOCKET_RX_START(a) + 1)
+
 //
 // max frame length which the conroller will accept:
-#define        MAX_FRAMELEN        1500        // (note: maximum ethernet frame length would be 1518)
-//#define MAX_FRAMELEN     600
-
-
+// (note: maximum ethernet frame length would be 1518)
+#define MAX_FRAMELEN        1500        
 
 #define ENC28J60_CONTROL_CS                     10
 #define SPI_MOSI				11
 #define SPI_MISO				12
 #define SPI_SCK					13
+
 // set CS to 0 = active
-#define CSACTIVE digitalWrite(ENC28J60_CONTROL_CS, LOW)
+#define CSACTIVE                                (PORTB = PORTB & 0xFB)
 // set CS to 1 = passive
-#define CSPASSIVE digitalWrite(ENC28J60_CONTROL_CS, HIGH) 
-//
-#define waitspi() while(!(SPSR&(1<<SPIF)))
+#define CSPASSIVE                               (PORTB = PORTB | 0x04)
+#define waitspi()                               while(!(SPSR&(1<<SPIF)))
 
 #endif
