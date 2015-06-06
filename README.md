@@ -1,7 +1,11 @@
 EtherEncLib
 ===========
 
-Ethernet ENC28J60 Library for Arduino
+**Ethernet ENC28J60 Library for Arduino**
+
+- New REV 3.1! (Already commited to master branch!)
+- New code by Renato Aloi, based on Howard Schlundler AN833's TCPStack work, from Microchip plataform. This new version is taking total advantage over ENC28J60's internal 8K Dual RAM!
+- NO MORE string buffers consuming Arduino RAM!
 
 May 2015
 REV 3.1 
@@ -15,24 +19,21 @@ REV 3 - New version! Now using Enc28CoreLib! For now, see new version at enc28co
 https://github.com/renatoaloi/EtherEncLib/tree/enc28coremerge
 New Commit with HTTP POST implemented! I will update comments and docs later! 
 
-EtherEncLib is a new implementation for ENC28J60 Stand-Alone Ethernet Controller with SPI Interface. 
+REV 2 - EtherEncLib is a new implementation for ENC28J60 Stand-Alone Ethernet Controller with SPI Interface. 
 Original implementation for this code was made by Guido Socher based on enc28j60.c file from the 
 AVRLib library by Pascal Stang; and finally modified by Renato Aloi.
 
-Unlike older implementations, EtherEncLib library utilizes a diferent approach, 
-sending more than one packet per request. This changes everything!
+**Documentation @ Wiki**
 
-The problem I'v got using older implementations is that my HTML is a larger sum of text!
-It got Javascript, CSS, tons of tags and commands. It didn't fit in that tiny 512 bytes 
-buffer the library had. And this buffer is sent once per request.
+- [Schematics](https://github.com/renatoaloi/EtherEncLib/wiki/Schematics)
+- [Changelog](https://github.com/renatoaloi/EtherEncLib/wiki/Revisions)
+- [Story](https://github.com/renatoaloi/EtherEncLib/wiki)
+- [Memory Organization](https://github.com/renatoaloi/EtherEncLib/wiki#enc28j60-memory-usage)
 
-EtherEncLib sends a small buffer plenty of times per request. Keep in mind we need to deliver
-an elephant through a lock door hole, kepping RAM consumption at low rates. So I did tear apart
-my large HTML into small chunks through TCP-IP packets.
+Thanks all for contribuing, special thanks to SKA for his POST treatment and SPI workout!
 
-See the real example HtmlButtonAllDigitalPortsAvailable.ino, where all Arduino UNO available ports
-are mapped to HTML buttons.
+by Renato Aloi
 
-Renato Aloi, August 2013
-renato.aloi@gmail.com
-http://seriallink.com.br
+May 2015
+
+[seriallink.com.br](http://www.seriallink.com.br)
