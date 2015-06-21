@@ -185,9 +185,13 @@ void TcpStack::handleStack(void)
 									m_buffering = true;
 									m_established = true;
 								}
-								else if (m_responding)
+								else if (m_responding && !m_closing)
 								{
 									if (DEBUG) Serial.println(F("responding!"));
+								}
+								else if (m_closing)
+								{
+									if (DEBUG) Serial.println(F("error, send reset!"));
 								}
 							}
 
@@ -653,6 +657,11 @@ void TcpStack::returnHttp(void) //(uchar* _buf, uint _size)
 	ck = checksumDMA(8 + TCP_HEADER_LEN_PLAIN_V + m_sizePayload);
 	m_sendData[TCP_CHECKSUM_H_P] = ((ck>>8)&0xFF);
 	m_sendData[TCP_CHECKSUM_L_P] = ((ck)&0xFF);
+
+	// strange bug
+	// must re-issue header len
+	// I think checksum is overriding next byte
+	m_sendData[TCP_HEADER_LEN_P] = 0x50;
 
 	
 	/*if (DEBUG) Serial.println();
