@@ -1,5 +1,5 @@
 /*
-    EtherEncLib.cpp - Library for Ethernet ENC29J60 Module.
+    EtherEncLib.cpp - Library for Ethernet ENC28J60 Module.
     Created by Renato Aloi, August 27, 2013.
 
 -- LICENSE INFO
@@ -30,13 +30,16 @@
   - ARP and ICMP treatment
   - HTTP GET and POST action over TCP-IP
   - Very responsive engine, and very fast!
+  - Lightweight library, only 27% of Arduino's RAM consumption (~450 bytes)
   - HTTPd engine with "One Way" implementation
     - One way flow = SYS..ACK..PUSH..FIN
   - Possible to send various PUSH statments trhough print() function
     - SYS..ACK..PUSH1..PUSH2..PUSH3..PUSHn..FIN
   - Avoid the limit imposed by others ENC28J60 libraries
-    - Other libs sends all data in one TCP PUSH packet, need large buffer
-    - EtherEncLib.h sends data in little chunks, NO need large buffer
+    - (OLD) Other libs sends all data in one TCP PUSH packet, need large buffer 
+    - (OLD) EtherEncLib.h sends data in little chunks, NO need large buffer
+    - REV 3.1 -- New version takes advantage of Enc28J60 RAM's 
+                 buffers and sends 1024 bytes one or more times per connection
   - available(), print() and close() functions makes easy
       coding and "thinking outside the box"
   - getParams() extracts the command line parameters ex:
@@ -46,15 +49,15 @@
 
 
   What do you NOT get ::
-  - This is a very limited implementation of TCP-IP protocol
-    - Do not expect implementations like FTP, SMTP, etc
-    - Only one aspect of TCP/HTTP service was implemented
+  - (OLD) This is a very limited implementation of TCP-IP protocol
+    - (OLD) Do not expect implementations like FTP, SMTP, etc (it will have DHCP and UDP shortly)
+    - (OLD) Only one aspect of TCP/HTTP service was implemented (UDP in progress)
   - OK! by Renato Aloi and SKA, May 2015
   - Faulty handle for diferent Source ports
     - The system will only handle one source port incomming connection
     - Other request arriving from other ports will be handled only at end of current request
     - Only FIN+ACK arriving from other ports will be handled
-  - UDP NOT implemented
+  - UDP NOT implemented (yet! Jun 2015 Renato Aloi)
 
 */
 
