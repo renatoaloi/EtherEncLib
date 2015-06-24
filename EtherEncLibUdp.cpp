@@ -34,7 +34,7 @@
 #include <Arduino.h>
 #include "EtherEncLibUdp.h"
 #include <avr/pgmspace.h>
-
+#include <stdlib.h>
 
 
 // --------------------------------------------------------------------------------------------------------------------------------------------
@@ -53,96 +53,101 @@ void EtherEncLibUdp::begin(unsigned char *ip, unsigned char *mac)
 	m_stack.open(m_port);
 }
 
-// Available method
-// Returns true when initial handshake is done
-unsigned char EtherEncLibUdp::available(void)
-{
-	if (m_stack.established() && !m_stack.closing())
-	{
-		
-	}
-	return 0;
-}
-
-// Print method
-// Sends data to client on byte at time
-void EtherEncLibUdp::print(char c)
-{
-	// REV 3.1 by Renato Aloi (May 2015)
-	//if (DEBUGLIBUDP) Serial.print(F("Now Really Printing: "));
-	if (DEBUGLIBUDP) Serial.print(c);
-	m_stack.write(c);
-}
-
-// Print method
-// Sends data to client in small chunks
-void EtherEncLibUdp::print(char *rd)
-{
-    // REV 3.1 by Renato Aloi (May 2015)
-    // TODO:
-    // it will hang up if it is not a string with null terminator!
-
-    if (DEBUGLIBUDP) Serial.println(F("Printing1: "));
-    do { 
-	if (*(rd) != 0) 
-	{
-		print((char)*(rd)); 
-	}
-    } while(*(rd++) != 0);    
-    if (DEBUGLIBUDP) Serial.println();
-}
-
-// Print method
-// Int values version of print method
-void EtherEncLibUdp::print(unsigned int val)
-{
-    if (DEBUGLIBUDP) Serial.println(F("Printing2: "));
-    char sI[] = { 0, 0, 0, 0, 0 };
-    itoa(val, sI, 10);
-    print(sI);
-    if (DEBUGLIBUDP) Serial.println();
-}
-
-// Print method
-// Int values version of print method
-void EtherEncLibUdp::print(int val)
-{
-    if (DEBUGLIBUDP) Serial.println(F("Printing2: "));
-    char sI[] = { 0, 0, 0, 0, 0 };
-    itoa(val, sI, 10);
-    print(sI);
-    if (DEBUGLIBUDP) Serial.println();
-}
-
-void EtherEncLibUdp::print(char *respondType, unsigned char dataLen) 
-{
-	// PROGMEM with 1-byte local buffer
-	// REV 3.1 by Renato Aloi (May 2015)
-	if (DEBUGLIBUDP) Serial.println(F("Printing3: "));
-	char respond[] = { 0 };
-	for (unsigned char i = 0; i < dataLen; i++)
-	{
-	  memcpy_P(respond,respondType+i,1);
-	  print(respond[0]);
-	}
-	if (DEBUGLIBUDP) Serial.println();
-	if (DEBUGLIBUDP) { Serial.print(F("FreeRAM: ")); Serial.print(freeRam()); }
-	if (DEBUGLIBUDP) Serial.println();
-}
-
-// Close method
-// Self-explaining
-void EtherEncLibUdp::close(void)
-{
-    m_stack.close();
-    //for (unsigned i = 0; i < BUFFER_PARAMS_LEN; i++)  m_httpData[i] = 0;
-    if (DEBUGLIBUDP) { Serial.print(F("FreeRAM: ")); Serial.print(freeRam()); }
-}
 
 char EtherEncLibUdp::read(void)
 {
 	return m_stack.read();
 }
 
+long EtherEncLibUdp::parseInt(void)
+{
+    long val = 0L;
+    char sI[] = { 0, 0, 0, 0, 0, 0, 0 };
+    char c = read();
+    char counter = 0;
+    while((c < '0' || c > '9') && counter++ < 7) c = read();
+    counter = 0;
+    while(c >= '0' && c <= '9' && counter < 7) { sI[counter++] = c; c = read(); }
+    val = (long)atoi(sI);
+    return val;
+}
 
+void EtherEncLibUdp::print(char c)
+{
+    m_stack.write(c);
+}
+
+void EtherEncLibUdp::print(float val)
+{
+    char floatBuffer[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    dtostrf(val,5,7,floatBuffer);
+    print(floatBuffer);
+}
+
+// Print method
+// Int values version of print method
+void EtherEncLibUdp::print(unsigned int val)
+{
+    char sI[] = { 0, 0, 0, 0, 0 };
+    itoa(val, sI, 10);
+    print(sI);
+}
+
+// Print method
+// Int values version of print method
+void EtherEncLibUdp::print(int val)
+{
+    char sI[] = { 0, 0, 0, 0, 0 };
+    itoa(val, sI, 10);
+    print(sI);
+}
+
+
+
+void EtherEncLibUdp::print(char *rd)
+{
+    unsigned long limit = millis() + 100;
+    do { 
+	if (*(rd) != 0) 
+	{
+		print((char)*(rd)); 
+	}
+    } while(*(rd++) != 0 && limit > millis()); 
+}
+
+
+
+
+// Start processing the next available incoming packet
+// Returns the size of the packet in bytes, or 0 if no packets are available
+int EtherEncLibUdp::parsePacket()
+{
+	uint16_t msgSize = m_stack.established();
+	if (msgSize)
+	{
+		// Ok, we got packet
+		return msgSize;
+	}
+	return 0;
+}
+
+// Start building up a packet to send to the remote host specific in ip and port
+// Returns 1 if successful, 0 if there was a problem with the supplied IP address or port
+int EtherEncLibUdp::beginPacket(unsigned char *ip, uint16_t port)
+{
+	if (!m_stack.isSession())
+	{
+		m_stack.beginSend(ip, port);
+		return 1;
+	}
+	return 0;
+}
+
+// Finish off this packet and send it
+// Returns 1 if the packet was sent successfully, 0 if there was an error
+int EtherEncLibUdp::endPacket()
+{
+	m_stack.send();
+	return 1;
+}
 

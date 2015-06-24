@@ -1,4 +1,5 @@
 EtherEncLib	KEYWORD1
+EtherEncLibUdp	KEYWORD1
 getParams	KEYWORD2
 isGet	KEYWORD2
 isPost	KEYWORD2

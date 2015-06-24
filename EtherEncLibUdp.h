@@ -26,6 +26,7 @@
 #define ETHERENCLIBUDP_H
 
 #define DEBUGLIBUDP           0
+#define UDP_TX_PACKET_MAX_SIZE 24
 
 class EtherEncLibUdp
 {
@@ -34,26 +35,44 @@ class EtherEncLibUdp
 	unsigned int m_port;
 	UdpStack m_stack;
 
-	int freeRam () {
-	  extern int __heap_start, *__brkval;
-	  int v;
-	  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-	};
+	void          print      (char c);
     
   public:
-    EtherEncLibUdp(unsigned int port) : m_port(port), m_stack(UdpStack()) {
-	};
+    EtherEncLibUdp(unsigned int port) : m_port(port), m_stack(UdpStack()) { };
    
     void          begin      (unsigned char *ip, unsigned char *mac);
-    unsigned char available  (void);
-    void          print      (char c);
-    void          print      (char *rd);
-    void          print      (unsigned int val);
-    void          print      (int val);
-    void	  print      (char *, unsigned char); // made by SKA
-    void          close      (void);
     char	  read       (void);
 
+  // Start processing the next available incoming packet
+  // Returns the size of the packet in bytes, or 0 if no packets are available
+  int parsePacket(void);
+
+  // Return the IP address of the host who sent the current incoming packet
+  unsigned char * remoteIP(void) { 
+	uchar ip[] = { 0, 0, 0, 0 };
+	uchar *p = &ip[0];
+	p = m_stack.getRemoteIp(); 
+	return p; 
+	};
+
+  long parseInt(); // { return 0L; }; // returns the first valid (long) integer value from the current position.
+  // initial characters that are not digits (or the minus sign) are skipped
+  // integer is terminated by the first character that is not a digit.
+
+  // Start building up a packet to send to the remote host specific in ip and port
+  // Returns 1 if successful, 0 if there was a problem with the supplied IP address or port
+  int beginPacket(unsigned char *ip, uint16_t port);
+  
+  // Finish off this packet and send it
+  // Returns 1 if the packet was sent successfully, 0 if there was an error
+  int endPacket();
+
+  void setTimeout(unsigned long timeout) { };  // sets maximum milliseconds to wait for stream data, default is 1 second
+
+  void          print      (float val);
+  void          print      (char *rd);
+  void          print      (unsigned int val);
+  void          print      (int val);
 
 };
 

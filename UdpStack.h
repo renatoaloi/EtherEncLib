@@ -38,10 +38,7 @@
 				    // by Renato Aloi (May 2015)
 #define MAC_SIZE		6
 #define IP_SIZE			4
-#define DEBUG			0
-#define DEBUGLT			1
-#define DEBUGTST		0 // Debugging why only working with DEBUG flag on. 
-				  //now it is ok, see delay at close function
+#define DEBUGUDP		0
 #define ETH_ARP_LEN     	42
 
 typedef uint8_t  uchar;
@@ -51,46 +48,56 @@ union longb { uchar b[4]; ulong l; };
 
 class UdpStack {
 private:
-	uint  m_sessionPort;
-	uint  m_serverPort;
 	uchar m_udpData[DATA_SIZE]; // need only for UDP header, for data: using enc28's hardware buffer (by Renato Aloi - May 2015)
 	uchar m_sendData[DATA_SIZE]; // need only for UDP header, also -- Total RAM consumption: 116 bytes
+
 	uchar m_macAddr[MAC_SIZE]; // No need math, passing through
-	uchar m_clientMacAddr[MAC_SIZE]; // Client's info
-	uchar m_clientIpAddr[IP_SIZE];
 	uchar m_ipAddr[IP_SIZE];
-	bool  m_established;
-	bool  m_closing;
+	uint  m_serverPort;
+
+	uchar m_remoteMacAddr[MAC_SIZE];
+	uchar m_remoteIpAddr[IP_SIZE];
+	uint  m_sessionPort;
+	
 	uint  m_rxPointer;
 	uint  m_txPointer;
-
+	uint  m_dataSize;
+	uint  m_sizePayload;
+	uint  m_packetId;
 
 	void  handleStack(void);
-	bool  isSession() { return m_sessionPort != 0; };
 	void  returnArp(void);
 	void  returnIcmp(void);
-	
+	void  returnUdp(void);
+	unsigned int checksumDMA(unsigned int payload);
 	void  waitForDMACopy(void);
-	unsigned int checksumDMA(unsigned int len);
 
 public:
-	UdpStack() :  m_rxPointer(0), m_txPointer(0), 
-				m_established(false), m_closing(false),
-				m_sessionPort(0), m_serverPort(0)
+	UdpStack() :  m_rxPointer(0), m_txPointer(0), m_sizePayload(0), m_packetId(1000),
+				m_sessionPort(0), m_serverPort(0), m_dataSize(0)
 	{
 		for (unsigned i = 0; i < MAC_SIZE; i++)  m_macAddr[i] = 0;
 		for (unsigned i = 0; i < IP_SIZE; i++)   m_ipAddr[i] = 0;
+		for (unsigned i = 0; i < MAC_SIZE; i++)  m_remoteMacAddr[i] = 255; // initial value as broadcast to dhcp
+		for (unsigned i = 0; i < IP_SIZE; i++)   m_remoteIpAddr[i] = 255;
 		for (unsigned i = 0; i < DATA_SIZE; i++) { m_udpData[i] = 0; m_sendData[i] = 0; }
 	};
+
 	void   setMacAddr(uchar* mac) { for (unsigned i = 0; i < MAC_SIZE; i++)  m_macAddr[i] = mac[i]; };
 	void   setIpAddr(uchar* ip) { for (unsigned i = 0; i < IP_SIZE; i++)   m_ipAddr[i] = ip[i]; };
+	uchar* getRemoteIp(void) { return m_remoteIpAddr; };
+	bool   isSession(void) { return m_sessionPort != 0; };
+	
 	void   open(uint serverPort);
+	uint   established(void) { handleStack(); return m_dataSize; };
+
+	void   beginSend(uchar* ip, uint port);
+
 	void   write(char c);  
-	void   send(void) { /*returnHttp(); m_txPointer = 0; m_sizePayload = 0;*/ };
 	char   read(void); // return char or -1 if reachs end
-	void   close(void) { /*if (m_sizePayload) send(); returnClose(); m_closing = true;*/ };
-	bool   established(void) { /*handleStack(); return m_established;*/ };
-	bool   closing(void) { return m_closing; };
+
+	void   send(void) { returnUdp(); m_sessionPort = 0; m_sizePayload = 0; };
+
 };
 
 #endif //UDPSTACK_H

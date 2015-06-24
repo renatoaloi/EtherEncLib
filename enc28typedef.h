@@ -84,8 +84,8 @@
 #define IP_P		         0x0E
 #define IP_TOTLEN_H_P		 0x10
 #define IP_TOTLEN_L_P		 0x11
-#define IP_ID_H_P			 0x12
-#define IP_ID_L_P			 0x13
+#define IP_ID_H_P		 0x12
+#define IP_ID_L_P		 0x13
 #define IP_SRC_P                 0x1A
 #define IP_DST_P                 0x1E
 #define IP_FLAGS_P               0x14
@@ -130,6 +130,22 @@
 #define TCP_CHECKSUM_L_P 	 0x33
 #define TCP_OPTIONS_P 		 0x36
 #define TCP_DATA_P	         0x36 
+
+
+
+// ******* UDP VALUES *******
+#define UDP_HEADER_LEN    	8
+
+// ******* TCP POSITIONS *******
+#define UDP_SRC_PORT_H_P 	0x22
+#define UDP_SRC_PORT_L_P 	0x23
+#define UDP_DST_PORT_H_P 	0x24
+#define UDP_DST_PORT_L_P 	0x25
+#define UDP_LEN_H_P 		0x26
+#define UDP_LEN_L_P 		0x27
+#define UDP_CHECKSUM_H_P 	0x28
+#define UDP_CHECKSUM_L_P 	0x29
+#define UDP_DATA_P 		0x2A
 
 // ****************************************************************************
 
