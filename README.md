@@ -3,9 +3,13 @@ EtherEncLib
 
 **Ethernet ENC28J60 Library for Arduino**
 
+- New branch for UDP, DHCP, DNS, WOL implementations!
 - New REV 3.1! (Already commited to master branch!)
 - New code by Renato Aloi, based on Howard Schlundler AN833's TCPStack work, from Microchip plataform. This new version is taking total advantage over ENC28J60's internal 8K Dual RAM!
 - NO MORE string buffers consuming Arduino RAM!
+
+June 2015 - Branch newMods
+- Implemented UDP Stack for Homeseer integration (already working at Normal Mode)
 
 May 2015
 REV 3.1 
