@@ -67,6 +67,7 @@ typedef union
 void 		MACInit(void);
 void 		MACOpen(void);
 void 		MACEnableRecv(void);
+void 		MACDisableRecv(void);
 void 		MACInitMacAddr(unsigned char *_macadd);
 unsigned char *MACGetMacAddr(void);
 unsigned char 	MACHardwareRevision(void);

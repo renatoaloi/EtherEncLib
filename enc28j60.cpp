@@ -224,6 +224,27 @@ void MACEnableRecv(void)
 }
 
 /******************************************************************************
+ * Function:        void MACDisableRecv(void)
+ *
+ * PreCondition:    none
+ *
+ * Input:           none
+ *
+ * Output:          None
+ *
+ * Side Effects:    none
+ *
+ * Overview:        Disable ENC28J60 hardware receiving status
+ *
+ * Note:            NewMods - AUG 2015 - New func to disable Recv by Renato Aloi
+ *****************************************************************************/
+void MACDisableRecv(void)
+{
+    
+    enc28j60WriteOp(ENC28J60_BIT_FIELD_CLR, ECON1, ECON1_RXEN);
+}
+
+/******************************************************************************
  * Function:        void MACInitMacAddr(unsigned char *_macadd)
  *
  * PreCondition:    none

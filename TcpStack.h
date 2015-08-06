@@ -67,10 +67,14 @@ private:
 	bool  m_responding;
 	bool  m_closing;
 	uint  m_recvPayload;
-	uint  m_sendPayload;
+	volatile uint  m_sendPayload;
 	uint  m_sizePayload;
 	uint  m_rxPointer;
 	uint  m_txPointer; // took me 2 years to uncomment this line! Renato Aloi May 2015
+	ulong m_lastAckSent;
+	ulong m_waitSpan;
+	ulong m_firstAckSent;
+	ulong m_firstSeqSent;
 	void  handleStack(void);
 	bool  isSession() { return m_sessionPort != 0; };
 	void  returnArp(void);
@@ -93,7 +97,7 @@ public:
 	TcpStack() : m_responding(false), m_packetId(0), m_rxPointer(0), m_txPointer(0), 
 				m_recvPayload(0), m_sendPayload(0), m_sizePayload(0),
 				m_buffering(false), m_established(false), m_closing(false),
-				m_sessionPort(0), m_serverPort(0)
+				m_sessionPort(0), m_serverPort(0), m_lastAckSent(0L), m_waitSpan(0L), m_firstAckSent(0L), m_firstSeqSent(0L)
 	{
 		m_seqNum.l = 0L;
 		m_ackNum.l = 0L;
