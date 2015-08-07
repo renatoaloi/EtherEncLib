@@ -251,16 +251,16 @@ void TcpStack::handleStack(void)
 
 									MACDisableRecv();
 									//waitForDMACopy();
-									delay(5);
+									delay(1);
 
 									// Copy packet from
 									// ENC28J60's RX buffer to socket RX buffer
 									// TODO: Manage sockets: 0 - socket 1; 1 - socket 2
 									DMACopy(RX, SOCKET_RX_START(0), m_recvPayload + ETH_BUFF_SIZE);
-									//waitForDMACopy();
+									waitForDMACopy();
 									
 
-									delay(5);
+									delay(1);
 									MACEnableRecv();
 
 									// Subtracting packet size from total = data size
@@ -621,6 +621,10 @@ void TcpStack::returnPush(void)
 	MACWriteTXBuffer(m_sendData, ETH_HEADER_LEN_V
 		           + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V);
 	MACSendTx();
+	m_lastAckSent = m_ackNum.l;
+
+	waitForACKResponse();
+
 	if (DEBUG) Serial.println();
 }
 
@@ -727,9 +731,9 @@ void TcpStack::returnHttp(void) //(uchar* _buf, uint _size)
 	//waitForDMACopy();
 	// Filling data before checksum!
 	DMACopy(TX, TXSTART_INIT + ETH_HEADER_LEN_V + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V + 1, m_sizePayload);
-	//waitForDMACopy();
+	waitForDMACopy();
 	//
-	delay(5);
+	delay(1);
 
 	ck = checksumDMA(8 + TCP_HEADER_LEN_PLAIN_V + m_sizePayload);
 	m_sendData[TCP_CHECKSUM_H_P] = ((ck>>8)&0xFF);
@@ -741,9 +745,9 @@ void TcpStack::returnHttp(void) //(uchar* _buf, uint _size)
 	m_sendData[TCP_HEADER_LEN_P] = 0x50;
 
 
-	delay(5);
+	delay(1);
 	MACEnableRecv();
-	//delay(10);
+	delay(1);
 
 	
 	/*if (DEBUG) Serial.println();
@@ -764,6 +768,10 @@ void TcpStack::returnHttp(void) //(uchar* _buf, uint _size)
 	
 
 	MACSendTx();
+	m_lastAckSent = m_ackNum.l;
+
+	waitForACKResponse();
+
 	if (DEBUG) Serial.println();
 }
 
@@ -1026,6 +1034,9 @@ void TcpStack::returnFin(void)
 	MACWriteTXBuffer(m_sendData, ETH_HEADER_LEN_V
 		           + IP_HEADER_LEN_V + TCP_HEADER_LEN_PLAIN_V);
 	MACSendTx();
+
+
+
 	if (DEBUG) Serial.println();
 }
 
@@ -1038,6 +1049,55 @@ void TcpStack::waitForDMACopy(void)
 	while(!IsDMACopyDone()) if (timerSendTrigger + 1000 < millis()) break;
 }
 
+
+//MACGetPacketCount() > 0
+
+// Wait for ACK Packet Arrives
+//
+void TcpStack::waitForACKResponse(void)
+{
+	uchar isDiscarded = false;
+	unsigned long actualAck = 0L;
+	ulong timerSendTrigger = millis();
+	do
+	{
+		if (timerSendTrigger + 100 < millis()) break;
+
+		if (MACGetPacketCount() > 0)
+		{
+
+			// Getting Packet from enc28 hardware's buffer
+			MACReadRXBuffer(m_tcpData, DATA_SIZE);
+			actualAck = ((ulong)m_tcpData[TCP_ACK_P+0] << 24) 
+			    		| ((ulong)m_tcpData[TCP_ACK_P+1] << 16)
+			    		| ((ulong)m_tcpData[TCP_ACK_P+2] << 8) 
+			    		| ((ulong)m_tcpData[TCP_ACK_P+3]);
+
+
+			if (actualAck <= m_lastAckSent) 
+			{
+				//
+				MACDiscardRx();
+				isDiscarded = true;
+				break;
+			}
+			
+
+
+		}
+	} while(!(MACGetPacketCount() > 0));
+
+	if (DEBUG) { Serial.print(F("TimeSpan: ")); Serial.println(millis() - timerSendTrigger, DEC); }
+	
+	if (DEBUG) Serial.print(F("Actual ACK: 0x"));  
+	if (DEBUG) Serial.println(actualAck, HEX);
+	if (DEBUG) Serial.print(F("Last sent ACK: 0x"));  
+	if (DEBUG) Serial.println(m_lastAckSent, HEX);
+
+	if (DEBUG && isDiscarded) Serial.println(F("Descartando pacote de resposta!"));
+	if (DEBUG && !isDiscarded) Serial.println(F("Nenhum pacote! descartado..."));
+
+}
 
 // PUBLIC
 

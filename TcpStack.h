@@ -85,6 +85,7 @@ private:
 	void  returnClose(void);
 	void  returnFin(void);
 	void  waitForDMACopy(void);
+	void  waitForACKResponse(void);
 	unsigned int checksumDMA(unsigned int len);
 
 	int freeRam () {
