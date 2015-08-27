@@ -419,15 +419,20 @@
 // (note: maximum ethernet frame length would be 1518)
 #define MAX_FRAMELEN        1500        
 
+/*--- made by SKA ---
 #define ENC28J60_CONTROL_CS                     10
 #define SPI_MOSI				11
 #define SPI_MISO				12
 #define SPI_SCK					13
+*/
+#define ENC28J60_CONTROL_CS                     SS
 
 // set CS to 0 = active
-#define CSACTIVE                                (PORTB = PORTB & 0xFB)
+//--- made by SKA ---#define CSACTIVE                                (PORTB = PORTB & 0xFB)
+#define CSACTIVE	( digitalWrite(ENC28J60_CONTROL_CS, LOW) )
 // set CS to 1 = passive
-#define CSPASSIVE                               (PORTB = PORTB | 0x04)
+//--- made by SKA ---#define CSPASSIVE                               (PORTB = PORTB | 0x04)
+#define CSPASSIVE	( digitalWrite(ENC28J60_CONTROL_CS, HIGH) )
 #define waitspi()                               while(!(SPSR&(1<<SPIF)))
 
 #endif
