@@ -85,7 +85,8 @@ void TcpStack::handleStack(void)
 
 			if (ipCheckOk)
 			{
-				if (DEBUG) Serial.println(F("Got ARP for my IP!"));
+//SKA
+				if (DEBUGHTTP) Serial.println(F("Got ARP for my IP!"));
 				returnArp();
 			}
 		}
@@ -105,7 +106,8 @@ void TcpStack::handleStack(void)
 
 				if (icmp)
 				{
-					if (DEBUG) Serial.println(F("Got ICMP!"));
+//SKA
+					if (DEBUGHTTP) Serial.println(F("Got ICMP!"));
 					returnIcmp();
 				}
 				else
@@ -134,7 +136,8 @@ void TcpStack::handleStack(void)
 								// session exists and is closing!
 								if (m_closing)
 								{
-									if (DEBUG) Serial.println(F("closing!"));
+//SKA
+									if (DEBUGHTTP) Serial.println(F("closing!"));
 
 									// Let client know that we know
 									// it is the way it works
@@ -176,7 +179,8 @@ void TcpStack::handleStack(void)
 								}
 								else if (m_responding && !m_closing)
 								{
-									if (DEBUG) Serial.println(F("responding!"));
+//SKA
+									if (DEBUGHTTP) Serial.println(F("responding!"));
 								}
 								else if (m_closing)
 								{
@@ -295,7 +299,8 @@ void TcpStack::handleStack(void)
 
 							if (!isSession())
 							{
-								if (DEBUG) Serial.println(F("new session!"));
+//SKA
+								if (DEBUGHTTP) Serial.println(F("new session!"));
 								// new session
 								m_sessionPort = (uint)(((uint)(m_tcpData[TCP_SRC_PORT_H_P]<<8) & 0xFF00) | (m_tcpData[TCP_SRC_PORT_L_P] & 0x00FF));
 								m_seqNum.b[0] = m_tcpData[TCP_SEQ_P+3];
@@ -422,7 +427,8 @@ void TcpStack::returnIcmp(void)
 
 void TcpStack::returnSyn(void)
 {
-	if (DEBUG) Serial.println(F("Returning SYN!"));
+//SKA
+	if (DEBUGHTTP) Serial.println(F("Returning SYN!"));
 
 	// Filling send buffer
 	for (unsigned i = 0; i < DATA_SIZE; i++) m_sendData[i] = m_tcpData[i];
@@ -508,7 +514,8 @@ void TcpStack::returnSyn(void)
 
 void TcpStack::returnPush(void)
 {
-	if (DEBUG) Serial.println(F("Returning PUSH!"));
+//SKA
+	if (DEBUGHTTP) Serial.println(F("Returning PUSH!"));
 
 	// Filling send buffer
 	// for (unsigned i = 0; i < DATA_SIZE; i++) m_sendData[i] = m_tcpData[i];
@@ -630,7 +637,8 @@ void TcpStack::returnPush(void)
 
 void TcpStack::returnHttp(void) //(uchar* _buf, uint _size)
 {
-	if (DEBUG) Serial.println(F("Printing to HTTP!"));
+//SKA
+	if (DEBUGHTTP) Serial.println(F("Printing to HTTP!"));
 
 	// Filling send buffer
 	// for (unsigned i = 0; i < DATA_SIZE; i++) m_sendData[i] = m_tcpData[i];
@@ -934,7 +942,8 @@ void TcpStack::returnClose(void)
 
 void TcpStack::returnFin(void)
 {
-	if (DEBUG) Serial.println(F("Returning FIN!"));
+//SKA
+	if (DEBUGHTTP) Serial.println(F("Returning FIN!"));
 
 	// Filling send buffer
 	// for (unsigned i = 0; i < DATA_SIZE; i++) m_sendData[i] = m_tcpData[i];
@@ -1130,7 +1139,7 @@ void TcpStack::open(uint serverPort)
 	// master mode and Fosc/2 clock:
 /*	SPCR = (1<<SPE)|(1<<MSTR);
 	SPSR |= (1<<SPI2X);*/
-	SPI.begin();
+//SKA	SPI.begin();
 //--- made by SKA ---
 
 	if (DEBUGLT) { Serial.println(F("Configuring Ethernet Layer...")); }
